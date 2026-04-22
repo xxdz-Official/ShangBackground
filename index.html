@@ -1,1 +1,699 @@
-这是上个背景的主页
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上一个桌面背景 - 项目主页</title>
+    <meta name="description" content="轻松找回并切换您的上一个桌面背景，壁纸管理从未如此简单。">
+    <meta name="keywords" content="上一个桌面背景, 壁纸工具, 桌面背景切换, ShangBackground">
+    <!-- 网页图标 -->
+    <link rel="icon" href="https://xxdz-official.github.io/ShangBackground/img/LOGO.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="https://xxdz-official.github.io/ShangBackground/img/LOGO.ico" type="image/x-icon">
+    <style>
+        /* 全局样式 - 直角风格，主题色 #34F2D9 */
+        * {
+            box-sizing: border-box;
+            font-family: "Consolas", "Microsoft YaHei", sans-serif;
+        }
+        body {
+            background: #f0f0f0;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px 30px;
+        }
+        /* 顶部导航 */
+        .header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .logo-img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            border: 1px solid #888;
+        }
+        .logo-area h1 {
+            font-size: 28px;
+            color: #222;
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+        .top-bar {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .top-bar a {
+            color: #333;
+            text-decoration: none;
+            font-size: 15px;
+            padding: 5px 12px;
+            border: 1px solid #888;
+            background: #fff;
+            transition: background 0.2s, border-color 0.2s;
+            white-space: nowrap;
+        }
+        .top-bar a:hover {
+            background: #34F2D9;
+            border-color: #34F2D9;
+            color: #222;
+        }
+        .divider {
+            border-bottom: 2px solid #444;
+            margin-bottom: 30px;
+        }
+        /* 下载横幅 */
+        .download-banner {
+            width: 100%;
+            padding: 30px 35px;
+            margin: 20px 0 30px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: none;
+            background: linear-gradient(145deg, #e0f7f5, #b8f2ea, #8eede2);
+            background-size: 300% 300%;
+            background-position: 0% 50%;
+            transition: background-position 0.8s ease;
+            background-image: url('https://xxdz-official.github.io/ShangBackground/img/%E6%96%87%E5%AD%97logo.png'), linear-gradient(145deg, #e0f7f5, #b8f2ea, #8eede2);
+            background-repeat: no-repeat, repeat;
+            background-position: left center, 0% 50%;
+            background-size: 20% auto, 300% 300%;
+            min-height: 200px;
+            position: relative;
+        }
+        .download-banner:hover {
+            background-position: left center, 100% 50%;
+        }
+        .banner-left-spacer {
+            width: 320px;
+            flex-shrink: 0;
+        }
+        .banner-text {
+            width: fit-content;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 15px 25px;
+            border: none;
+            margin-right: 300px;
+        }
+        .banner-text h2 {
+            font-size: 32px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+        }
+        .version-row {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            flex-wrap: wrap;
+        }
+        .version-tag {
+            font-size: 26px;
+            font-weight: 500;
+            color: #1e1e1e;
+        }
+        .download-button {
+            display: inline-block;
+            background: #fff;
+            border: 2px solid #34F2D9;
+            padding: 10px 32px;
+            font-size: 22px;
+            font-weight: 600;
+            color: #2b2b2b;
+            text-decoration: none;
+            transition: 0.15s;
+            line-height: 1.2;
+        }
+        .download-button:hover {
+            background: #34F2D9;
+            color: #222;
+            border-color: #34F2D9;
+        }
+        .donate-button {
+            display: inline-block;
+            background: #fff;
+            border: 2px solid #34F2D9;
+            padding: 10px 18px;
+            font-size: 20px;
+            font-weight: 600;
+            color: #2b2b2b;
+            text-decoration: none;
+            transition: 0.15s;
+            line-height: 1.2;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .donate-button:hover {
+            background: #34F2D9;
+            color: #222;
+            border-color: #34F2D9;
+        }
+        /* 悬浮窗样式 */
+        .donation-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotateX(-90deg) scale(0.8);
+            width: 820px;
+            background: #fff;
+            border: 2px solid #34F2D9;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease-out;
+            transform-origin: center center;
+            perspective: 1000px;
+        }
+        .donation-popup.show {
+            display: block;
+            transform: translate(-50%, -50%) rotateX(0) scale(1);
+            opacity: 1;
+        }
+        .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            border-bottom: 1px solid #ddd;
+            background: #f8f8f8;
+        }
+        .popup-header h3 {
+            font-size: 20px;
+            color: #222;
+            margin: 0;
+        }
+        .close-popup {
+            background: #fff;
+            border: 1px solid #888;
+            padding: 4px 12px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+        .close-popup:hover {
+            background: #34F2D9;
+            border-color: #34F2D9;
+            color: #222;
+        }
+        .popup-content {
+            padding: 20px;
+            min-height: 480px;
+        }
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0);
+            z-index: 999;
+            transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .popup-overlay.show {
+            display: block;
+            background: rgba(0,0,0,0.5);
+        }
+        .donation-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            gap: 20px;
+        }
+        .left-panel {
+            width: 320px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            background: #fafafa;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .qr-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #07C160;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .qr-image {
+            width: 280px;
+            height: 380px;
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .qr-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .right-panel {
+            flex: 1;
+            padding: 10px 0;
+        }
+        .right-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #d32f2f;
+            margin-bottom: 15px;
+        }
+        .form-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .form-label {
+            width: 80px;
+            font-size: 14px;
+        }
+        .form-input {
+            flex: 1;
+            padding: 6px 8px;
+            border: 1px solid #ccc;
+            font-family: "Consolas", "Microsoft YaHei", sans-serif;
+            font-size: 14px;
+        }
+        .form-textarea {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #ccc;
+            font-family: "Consolas", "Microsoft YaHei", sans-serif;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 60px;
+        }
+        .tip-small {
+            font-size: 12px;
+            color: #666;
+            margin-left: 80px;
+            margin-bottom: 10px;
+        }
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 15px 0;
+        }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+        .friend-btn {
+            background: #fff;
+            border: 1px solid #888;
+            padding: 4px 12px;
+            cursor: pointer;
+            font-size: 13px;
+            text-decoration: none;
+            color: #333;
+        }
+        .friend-btn:hover {
+            background: #34F2D9;
+            border-color: #34F2D9;
+            color: #222;
+        }
+        .id-box {
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .id-text {
+            font-size: 14px;
+            font-weight: bold;
+            color: #0078d4;
+        }
+        .donation-tip-box {
+            background: #fff8e1;
+            border: 1px solid #ffd54f;
+            padding: 10px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        .donation-tip-text {
+            color: #b85c00;
+            font-size: 14px;
+        }
+        .submit-btn {
+            width: 100%;
+            background: #fff;
+            border: 2px solid #34F2D9;
+            padding: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #2b2b2b;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        .submit-btn:hover {
+            background: #34F2D9;
+            color: #222;
+        }
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .footer-text {
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+        .footer-link {
+            color: #66ccff;
+            font-size: 12px;
+            text-align: center;
+            margin-top: 5px;
+        }
+        .banner-credit {
+            position: absolute;
+            bottom: 8px;
+            right: 12px;
+            font-size: 12px;
+            color: rgba(51, 51, 51, 0.6);
+            font-style: italic;
+            margin: 0;
+            padding: 2px 6px;
+            background-color: rgba(255, 255, 255, 0.3);
+            border: none;
+        }
+        /* 开发者模块 */
+        .developer-module {
+            width: 100%;
+            border: 1px solid #aaa;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            margin: 20px 0 30px 0;
+        }
+        .dev-header {
+            padding: 12px 20px;
+            border-bottom: 1px solid #ddd;
+            background: #f8f8f8;
+        }
+        .dev-header h3 {
+            font-size: 22px;
+            color: #222;
+            margin: 0;
+        }
+        .dev-content {
+            padding: 20px;
+            display: flex;
+            flex-direction: row;
+            gap: 18px;
+            align-items: center;
+            flex: 1;
+        }
+        .dev-avatar {
+            width: 85px;
+            height: 85px;
+            border: 2px solid #34F2D9;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+        .dev-info {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+        }
+        .dev-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: #222;
+            line-height: 1.3;
+        }
+        .dev-bio {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.5;
+        }
+        .button-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .dev-link, .video-link {
+            display: inline-block;
+            background: #fff;
+            border: 1px solid #888;
+            padding: 6px 14px;
+            color: #333;
+            text-decoration: none;
+            font-size: 13px;
+            transition: all 0.2s;
+            width: fit-content;
+        }
+        .dev-link:hover, .video-link:hover {
+            background: #34F2D9;
+            border-color: #34F2D9;
+            color: #222;
+        }
+        /* 版本列表 */
+        .version-list {
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #aaa;
+            padding: 20px 25px;
+            margin-top: 25px;
+        }
+        .version-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px dashed #bbb;
+        }
+        .version-item:last-child {
+            border-bottom: none;
+        }
+        .version-name {
+            font-size: 22px;
+            font-weight: 500;
+            color: #222;
+        }
+        .version-download {
+            background: #fff;
+            border: 1px solid #666;
+            padding: 6px 22px;
+            color: #333;
+            text-decoration: none;
+            font-size: 18px;
+        }
+        .version-download:hover {
+            background: #34F2D9;
+            border-color: #34F2D9;
+            color: #222;
+        }
+        .footer {
+            margin-top: 35px;
+            border-top: 1px solid #aaa;
+            padding: 18px 0;
+            color: #555;
+            font-size: 14px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header-row">
+    <div class="logo-area">
+        <img src="https://xxdz-official.github.io/ShangBackground/img/LOGO.png" alt="ShangBackground logo" class="logo-img">
+        <h1>上一个桌面背景 - 项目主页</h1>
+    </div>
+        <div class="top-bar">
+            <a href="https://message.bilibili.com/#/whisper/mid3461569935575626" target="_blank">联系作者：小小电子xxdz</a>
+            <a href="https://miku66ccff.freeflarum.com" target="_blank">交流论坛</a>
+            <a href="https://github.com/xxdz-Official/ShangBackground" target="_blank">GitHub主页</a>
+            <a href="https://xxdz-official.github.io/x/FriendURL.html" target="_blank">友情链接</a>
+            <a href="https://xxdz-official.github.io/x" target="_blank">前往電籽的灵质空间 | 小小电子xxdz 主站</a>
+        </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- 下载横幅 -->
+<div class="download-banner">
+    <div class="banner-left-spacer"></div>
+    <div class="banner-text">
+        <h2>下载 上一个桌面背景 最新版本</h2>
+        <div class="version-row">
+            <span class="version-tag">v1.0</span>
+            <a href="v1.html" class="download-button">前往下载 &gt;</a>
+            <span class="donate-button" onclick="openDonationPopup()">施舍~</span>
+        </div>
+    </div>
+    <h5 class="banner-credit">*本程序依靠deepseek辅助完成</h5>
+</div>
+
+<!-- 悬浮窗遮罩层 -->
+<div class="popup-overlay" id="popupOverlay" onclick="closeDonationPopup()"></div>
+
+<!-- 悬浮窗内容 - 赞赏窗口 -->
+<div class="donation-popup" id="donationPopup">
+    <div class="popup-header">
+        <h3>打赏支持开发者 小小电子xxdz 的创作</h3>
+        <span class="close-popup" onclick="closeDonationPopup()">×</span>
+    </div>
+    <div class="popup-content">
+        <div class="donation-container">
+            <div class="left-panel">
+                <div class="qr-title">微信收款码</div>
+                <div class="qr-image">
+                    <img src="https://message.biliimg.com/bfs/im_new/e0fcfb32aff6bd4abee0d791dd2aeaee3461569935575626.png" alt="微信收款码">
+                </div>
+            </div>
+            <div class="right-panel">
+                <div class="right-title">【非必填】感谢您滴支持 ♪(^∇^*)</div>
+                <div class="form-row">
+                    <span class="form-label">尊姓大名:</span>
+                    <input type="text" class="form-input" id="donorName" placeholder="">
+                </div>
+                <div class="tip-small">*如果想加入友情链接请填微信昵称方便核对，勿填写隐私，无需填微信号</div>
+                <div style="margin: 10px 0;">
+                    <span class="form-label" style="display: block; margin-bottom: 5px;">请写备注:</span>
+                    <textarea class="form-textarea" id="donorRemark" placeholder=""></textarea>
+                </div>
+                <div class="checkbox-row">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="friendCheck" checked> 您是否想出现在官网友情链接里？
+                    </label>
+                    <button class="friend-btn" onclick="window.open('https://xxdz-official.github.io/x/FriendURL.html')">查看友情链接网页</button>
+                </div>
+                <div class="id-box">
+                    <span class="id-text" id="randomId"></span>
+                </div>
+                <div class="donation-tip-box">
+                    <div class="donation-tip-text">为了避免歧义，请保留好您的施舍证据（支付记录）!!</div>
+                    <div class="donation-tip-text" style="margin-top: 5px;">您真是大善人q(≧▽≦q)！！感谢为小小电子xxdz的创作充电！</div>
+                </div>
+                <button class="submit-btn" id="submitBtn" onclick="submitDonation()">确认已施舍并提交信息</button>
+                <div class="footer-text">您的支持是我们前进的动力！</div>
+                <div class="footer-link">如有疑问请联系B站_小小电子xxdz(UID:3461569935575626)</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 开发者模块 -->
+<div class="developer-module">
+    <div class="dev-header">
+        <h3>关于作者</h3>
+    </div>
+    <div class="dev-content">
+        <img src="https://avatars.githubusercontent.com/u/193121306?v=4" alt="小小电子xxdz" class="dev-avatar">
+        <div class="dev-info">
+            <div class="dev-name">小小电子xxdz</div>
+            <div class="dev-bio">我叫電籽,一只爱好电脑 术曲滴小狼‖XXDZ工作室创始人</div>
+            <div class="button-group">
+                <a href="https://space.bilibili.com/3461569935575626" target="_blank" class="dev-link">访问主页 →</a>
+                <a href="https://www.bilibili.com/video/BV1VsPKzNEPG" target="_blank" class="video-link">观看发布视频</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 版本列表 -->
+<div class="version-list">
+    <h3 style="margin-bottom: 20px; font-size: 24px; border-left: 6px solid #34F2D9; padding-left: 15px;">历史版本下载列表</h3>
+    <div class="version-item">
+        <span class="version-name">上一个桌面背景 v1 简体中文版</span>
+        <a href="v1.html" class="version-download">前往下载 &gt;</a>
+    </div>
+</div>
+
+<div class="footer">
+    © 2026 小小电子xxdz · 上一个桌面背景
+</div>
+
+<script>
+    // 赞赏窗控制
+    function openDonationPopup() {
+        const popup = document.getElementById('donationPopup');
+        const overlay = document.getElementById('popupOverlay');
+        popup.style.display = 'block';
+        overlay.style.display = 'block';
+        popup.offsetHeight;
+        popup.classList.add('show');
+        overlay.classList.add('show');
+        generateRandomId();
+    }
+    function closeDonationPopup() {
+        const popup = document.getElementById('donationPopup');
+        const overlay = document.getElementById('popupOverlay');
+        popup.classList.remove('show');
+        overlay.classList.remove('show');
+        setTimeout(() => {
+            popup.style.display = 'none';
+            overlay.style.display = 'none';
+        }, 400);
+    }
+    function generateRandomId() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let result = '';
+        for (let i = 0; i < 10; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        document.getElementById('randomId').textContent = `您的唯一ID: ${result}`;
+        return result;
+    }
+    // 提交赞赏信息
+    async function submitDonation() {
+        const name = document.getElementById('donorName').value.trim() || '匿名';
+        const remark = document.getElementById('donorRemark').value.trim() || '无备注';
+        const friend = document.getElementById('friendCheck').checked ? '1' : '0';
+        const idElement = document.getElementById('randomId');
+        const id = idElement.textContent.replace('您的唯一ID: ', '');
+        const donationData = { username: name, id: id, data: remark, Friend: friend };
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = '提交中...';
+        try {
+            const BIN_ID = '698f1502d0ea881f40b76c11';
+            const MASTER_KEY = '$2a$10$usS36BdO17gWRxIMd56gjOwrDWBlfrGdsPW1AFFhcp1TBUrbqFg4G';
+            const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+            const getResponse = await fetch(API_URL, { headers: { 'X-Master-Key': MASTER_KEY } });
+            if (!getResponse.ok) throw new Error(`获取数据失败: HTTP ${getResponse.status}`);
+            const responseData = await getResponse.json();
+            let existingData = responseData.record || (Array.isArray(responseData) ? responseData : []);
+            if (!Array.isArray(existingData)) existingData = [];
+            existingData.push(donationData);
+            const putResponse = await fetch(API_URL, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'X-Master-Key': MASTER_KEY },
+                body: JSON.stringify(existingData)
+            });
+            if (!putResponse.ok) throw new Error(`更新数据失败: HTTP ${putResponse.status}`);
+            alert('感谢您的施舍！\n\n数据已成功提交服务器！');
+        } catch (error) {
+            console.error('提交失败', error);
+            alert(`提交失败: ${error.message}\n\n请稍后重试或联系管理员小小电子xxdz！`);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '确认已施舍并提交信息';
+            closeDonationPopup();
+        }
+    }
+    window.onload = function() {
+        generateRandomId();
+    };
+</script>
+</body>
+</html>
