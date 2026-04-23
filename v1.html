@@ -2,206 +2,276 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
     <title>上一个桌面背景 v1.0 下载</title>
+    <meta name="description" content="下载上一个桌面背景 v1.0 简体中文版，一键切换壁纸历史，支持Windows 64位系统。">
+    <meta name="keywords" content="上一个桌面背景下载, 壁纸工具 v1.0, ShangBackground, 桌面背景切换">
     <link rel="icon" href="https://xxdz-official.github.io/ShangBackground/img/LOGO.ico" type="image/x-icon">
     <link rel="shortcut icon" href="https://xxdz-official.github.io/ShangBackground/img/LOGO.ico" type="image/x-icon">
     <style>
         * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
-            font-family: "Consolas", "Microsoft YaHei", sans-serif;
         }
+
         body {
             background: #f0f0f0;
             color: #333;
-            line-height: 1.4;
-            padding: 15px 25px;
+            font-family: "Consolas", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.5;
+            padding: 18px 24px;
         }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 16px 18px;
+            }
+        }
+        @media (max-width: 560px) {
+            body {
+                padding: 14px 16px;
+            }
+        }
+
         .top-nav {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 18px;
             border-bottom: 2px solid #444;
-            padding-bottom: 8px;
+            padding-bottom: 12px;
         }
         .logo-area {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            flex-wrap: wrap;
         }
         .logo-img {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             object-fit: contain;
             border: 1px solid #888;
+        }
+        @media (max-width: 540px) {
+            .logo-img {
+                width: 36px;
+                height: 36px;
+            }
         }
         .logo-area h1 {
             font-size: 24px;
             color: #222;
-            border-bottom: none;
             margin: 0;
+            line-height: 1.2;
+            word-break: break-word;
         }
+        @media (max-width: 560px) {
+            .logo-area h1 {
+                font-size: 20px;
+            }
+        }
+
         .back-link {
             color: #333;
             text-decoration: none;
             font-size: 14px;
-            padding: 4px 12px;
+            padding: 6px 14px;
             border: 1px solid #888;
             background: #fff;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
+            white-space: nowrap;
         }
         .back-link:hover {
             background: #34F2D9;
             border-color: #34F2D9;
             color: #222;
         }
+        @media (max-width: 460px) {
+            .back-link {
+                font-size: 12px;
+                padding: 4px 10px;
+            }
+        }
+
         .download-card {
             width: 100%;
-            background: #fff;
+            background: #ffffff;
             border: 1px solid #aaa;
-            padding: 20px 25px;
-            margin: 10px 0 20px 0;
+            padding: 22px 28px;
+            margin: 12px 0 24px 0;
         }
+
+        @media (max-width: 700px) {
+            .download-card {
+                padding: 18px 20px;
+            }
+        }
+        @media (max-width: 550px) {
+            .download-card {
+                padding: 14px 16px;
+            }
+        }
+
         .software-header {
             display: flex;
             align-items: center;
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: 18px;
+            margin-bottom: 24px;
             border-bottom: 1px solid #ddd;
-            padding-bottom: 15px;
+            padding-bottom: 18px;
+            flex-wrap: wrap;
         }
         .software-icon {
-            width: 60px;
-            height: 60px;
+            width: 64px;
+            height: 64px;
             object-fit: contain;
             border: 1px solid #888;
+        }
+        @media (max-width: 480px) {
+            .software-icon {
+                width: 52px;
+                height: 52px;
+            }
         }
         .software-title h2 {
             font-size: 28px;
             color: #222;
-            margin: 0 0 5px 0;
+            margin: 0 0 6px 0;
+        }
+        @media (max-width: 640px) {
+            .software-title h2 {
+                font-size: 24px;
+            }
         }
         .software-title .version-tag {
-            font-size: 16px;
+            font-size: 15px;
             color: #34F2D9;
             border: 1px solid #34F2D9;
-            padding: 3px 10px;
+            padding: 4px 12px;
             display: inline-block;
+            background: rgba(52, 242, 217, 0.05);
         }
+
         .info-row {
             display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
+            gap: 28px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
         }
         .screenshot-area {
-            flex: 1;
+            flex: 1.2;
+            min-width: 200px;
         }
         .screenshot-img {
             width: 100%;
-            max-width: 695px;
+            max-width: 100%;
             border: 1px solid #aaa;
             object-fit: cover;
+            display: block;
+            height: auto;
+            background: #eaeaea;
         }
+
         .details-area {
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 18px;
+            min-width: 200px;
         }
-        .version-desc {
+
+        .version-desc, .platform-info {
             border: 1px solid #ddd;
-            padding: 15px;
+            padding: 16px 18px;
             background: #fafafa;
         }
-        .version-desc h3 {
+        .version-desc h3, .platform-info h3 {
             font-size: 20px;
-            margin: 0 0 10px 0;
+            margin: 0 0 12px 0;
             border-left: 4px solid #34F2D9;
-            padding-left: 12px;
+            padding-left: 14px;
         }
         .version-desc p {
             font-size: 14px;
             color: #444;
-            line-height: 1.5;
+            line-height: 1.55;
             white-space: pre-line;
             margin: 0;
-        }
-        .platform-info {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            border: 1px solid #ddd;
-            padding: 15px;
-            background: #fafafa;
-        }
-        .platform-info h3 {
-            font-size: 20px;
-            margin: 0 0 10px 0;
-            border-left: 4px solid #34F2D9;
-            padding-left: 12px;
         }
         .info-item {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
             font-size: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
         }
         .info-label {
-            font-weight: 600;
-            min-width: 60px;
+            font-weight: 700;
+            min-width: 64px;
             color: #222;
         }
         .info-value {
-            color: #666;
+            color: #555;
         }
+
         .example-project {
-            margin-top: 8px;
+            margin-top: 6px;
             border: 1px solid #ddd;
-            padding: 12px 15px;
+            padding: 14px 18px;
             background: #fafafa;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 14px;
         }
         .example-project-left {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
         .example-project-left span {
             font-size: 14px;
             color: #222;
+            font-weight: 500;
         }
         .example-download-btn {
             background: #fff;
             border: 1px solid #888;
-            padding: 4px 14px;
+            padding: 6px 18px;
             color: #333;
             text-decoration: none;
             font-size: 14px;
             transition: all 0.2s;
+            display: inline-block;
         }
         .example-download-btn:hover {
             background: #34F2D9;
             border-color: #34F2D9;
             color: #222;
         }
+
         .download-links {
-            margin-top: 20px;
+            margin-top: 22px;
             border-top: 1px solid #ddd;
-            padding-top: 20px;
+            padding-top: 24px;
         }
         .download-links h3 {
-            font-size: 20px;
-            margin: 0 0 15px 0;
+            font-size: 22px;
+            margin: 0 0 18px 0;
             border-left: 4px solid #34F2D9;
-            padding-left: 12px;
+            padding-left: 14px;
         }
         .link-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 10px;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 16px;
+            align-items: start;
         }
         .download-link-btn {
             display: flex;
@@ -210,46 +280,78 @@
             justify-content: center;
             background: #fff;
             border: 1px solid #888;
-            padding: 8px 15px;
+            padding: 12px 12px;
             color: #333;
             text-decoration: none;
-            font-size: 15px;
+            font-size: 16px;
+            font-weight: 500;
             text-align: center;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
+            gap: 6px;
         }
         .download-link-btn:hover {
             background: #34F2D9;
             border-color: #34F2D9;
             color: #222;
+            transform: translateY(-2px);
         }
         .btn-small {
             font-size: 11px;
-            opacity: 0.9;
-            margin-top: 2px;
+            opacity: 0.85;
+            font-weight: normal;
         }
         .recommend-tag {
             background: #34F2D9;
-            color: #222;
+            color: #111;
             font-size: 10px;
-            padding: 2px 6px;
-            margin-left: 6px;
+            padding: 2px 8px;
+            margin-left: 4px;
             border: none;
-            vertical-align: middle;
+            font-weight: bold;
+            display: inline-block;
         }
         .quark-small-note {
             grid-column: 1 / -1;
             font-size: 12px;
-            color: #666;
-            margin-top: 5px;
-            line-height: 1.4;
+            color: #5a5a5a;
+            margin-top: 6px;
+            background: #fef7e0;
+            padding: 10px 14px;
+            border-left: 3px solid #34F2D9;
+            line-height: 1.5;
         }
+
+        @media (max-width: 580px) {
+            .link-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            .download-link-btn {
+                padding: 10px 12px;
+                flex-direction: row;
+                justify-content: space-between;
+            }
+            .btn-small, .recommend-tag {
+                margin-left: 8px;
+            }
+        }
+
         .footer {
-            margin-top: 25px;
+            margin-top: 28px;
             border-top: 1px solid #aaa;
-            padding: 12px 0;
+            padding: 16px 0;
             color: #555;
-            font-size: 12px;
+            font-size: 13px;
             text-align: left;
+        }
+
+        a, .download-link-btn, .back-link, .example-download-btn {
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
         }
     </style>
 </head>
@@ -257,7 +359,7 @@
 
 <div class="top-nav">
     <div class="logo-area">
-        <img src="https://xxdz-official.github.io/ShangBackground/img/LOGO.png" alt="ShangBackground logo" class="logo-img">
+        <img src="https://xxdz-official.github.io/ShangBackground/img/LOGO.png" alt="ShangBackground logo" class="logo-img" loading="lazy">
         <h1>上一个桌面背景 v1 下载</h1>
     </div>
     <a href="index.html" class="back-link">← 返回主页</a>
@@ -265,7 +367,7 @@
 
 <div class="download-card">
     <div class="software-header">
-        <img src="https://xxdz-official.github.io/ShangBackground/img/LOGO.png" alt="软件图标" class="software-icon">
+        <img src="https://xxdz-official.github.io/ShangBackground/img/LOGO.png" alt="软件图标" class="software-icon" loading="lazy">
         <div class="software-title">
             <h2>上一个桌面背景 编辑器</h2>
             <span class="version-tag">版本：简体中文版 v1.0</span>
@@ -274,7 +376,7 @@
 
     <div class="info-row">
         <div class="screenshot-area">
-            <img src="https://xxdz-official.github.io/ShangBackground/img/6.png" alt="上一个桌面背景 v1 软件截图" class="screenshot-img">
+            <img src="https://xxdz-official.github.io/ShangBackground/img/6.png" alt="上一个桌面背景 v1 软件截图" class="screenshot-img" loading="lazy">
         </div>
         <div class="details-area">
             <div class="version-desc">
@@ -284,7 +386,7 @@
                     • 一键回退到上一个桌面背景<br>
                     • 壁纸历史记录管理<br>
                     • 轻量级常驻托盘，快捷键操作<br>
-                    • 支持常见图片格式
+                    • 支持常见图片格式 (jpg/png/bmp)
                 </p>
             </div>
             <div class="platform-info">
@@ -298,7 +400,7 @@
                     <span class="project-icon">📁</span>
                     <span>示例壁纸包下载</span>
                 </div>
-                <a href="https://pan.huang1111.cn/s/oX9qjS8" class="example-download-btn" target="_blank">下载</a>
+                <a href="https://pan.huang1111.cn/s/oX9qjS8" class="example-download-btn" target="_blank" rel="noopener noreferrer">下载</a>
             </div>
         </div>
     </div>
@@ -306,20 +408,20 @@
     <div class="download-links">
         <h3>下载线路</h3>
         <div class="link-grid">
-            <a href="https://pan.quark.cn/s/0c11a138b3b6" class="download-link-btn" target="_blank">
+            <a href="https://pan.quark.cn/s/0c11a138b3b6" class="download-link-btn" target="_blank" rel="noopener noreferrer">
                 夸克网盘
                 <span class="recommend-tag">超推荐</span>
             </a>
-            <a href="https://www.123865.com/s/a5YSVv-JUqHd" class="download-link-btn" target="_blank">
+            <a href="https://www.123865.com/s/a5YSVv-JUqHd" class="download-link-btn" target="_blank" rel="noopener noreferrer">
                 123云盘
                 <span class="btn-small">备用线路</span>
             </a>
-            <a href="https://pan.huang1111.cn/s/DVRv9c4" class="download-link-btn" target="_blank">
+            <a href="https://pan.huang1111.cn/s/DVRv9c4" class="download-link-btn" target="_blank" rel="noopener noreferrer">
                 111云盘
                 <span class="btn-small">备用线路</span>
             </a>
             <div class="quark-small-note">
-                我坦白，夸克已与我进行小合作，您使用夸克下载(或转存)会对我产生微薄的收益，助力本未成年开发者的创作！
+                💡 我坦白，夸克已与我进行小合作，您使用夸克下载(或转存)会对我产生微薄的收益，助力本未成年开发者的创作！感谢您的支持OwO
             </div>
         </div>
     </div>
