@@ -35,6 +35,7 @@ DEPENDENCIES = [
     {"module": "requests", "package": "requests", "required": False, "desc": "版本检查和使用统计"},
     {"module": "numpy", "package": "numpy", "required": False, "desc": "更快的渐变/转场生成"},
     {"module": "pystray", "package": "pystray", "required": False, "desc": "系统托盘图标"},
+    {"module": "keyboard", "package": "keyboard", "required": False, "desc": "全局快捷键支持"},
     {"module": "psutil", "package": "psutil", "required": False, "desc": "进程清理与辅助控制"},
     {"module": "AppKit", "package": "pyobjc-framework-Cocoa", "required": False, "desc": "macOS 菜单栏常驻"},
     {"module": "AVFoundation", "package": "pyobjc-framework-AVFoundation", "required": False, "desc": "macOS 视频壁纸播放器"},

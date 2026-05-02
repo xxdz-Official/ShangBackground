@@ -104,6 +104,8 @@ def run_menu_bar(script_path, main_pid=None):
         NSMenuItem,
         NSStatusBar,
         NSVariableStatusItemLength,
+        NSEvent,
+        NSRightMouseDown,
     )
     from Foundation import NSObject
 
@@ -118,6 +120,15 @@ def run_menu_bar(script_path, main_pid=None):
             self.script_path = path
             self.main_pid = int(pid) if pid else 0
             return self
+
+        def mouseDown_(self, event):
+            # 左键点击显示主菜单
+            if event.type() == NSEvent.leftMouseDown:
+                status_item = NSStatusBar.systemStatusBar().statusItemWithLength_(NSVariableStatusItemLength)
+                status_item.button().performClick_(None)
+            # 右键点击显示右键菜单
+            elif event.type() == NSEvent.rightMouseDown:
+                self.rightClickMenu_(None)
 
         def _send_or_launch(self, command, *args):
             if _is_process_alive(self.main_pid):
@@ -151,14 +162,46 @@ def run_menu_bar(script_path, main_pid=None):
                 pass
             NSApp.terminate_(None)
 
+        def rightClickMenu_(self, sender):
+            # 创建右键菜单
+            right_menu = NSMenu.alloc().init()
+
+            def add_right_item(title, action_name):
+                item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(title, action_name, "")
+                item.setTarget_(self)
+                right_menu.addItem_(item)
+
+            add_right_item("快速设置", "quickSettings:")
+            add_right_item("切换模式", "switchMode:")
+            add_right_item("壁纸文件夹", "openWallpaperFolder:")
+            right_menu.addItem_(NSMenuItem.separatorItem())
+            add_right_item("关于", "about:")
+
+            # 显示右键菜单
+            status_item = NSStatusBar.systemStatusBar().statusItemWithLength_(NSVariableStatusItemLength)
+            status_item.popUpStatusItemMenu_(right_menu)
+
+        def quickSettings_(self, sender):
+            self._send_or_launch("quick-settings", "--quick-settings")
+
+        def switchMode_(self, sender):
+            self._send_or_launch("switch-mode", "--switch-mode")
+
+        def openWallpaperFolder_(self, sender):
+            self._send_or_launch("open-folder", "--open-wallpaper-folder")
+
+        def about_(self, sender):
+            self._send_or_launch("about", "--about")
+
     app = NSApplication.sharedApplication()
     app.setActivationPolicy_(NSApplicationActivationPolicyAccessory)
     controller = MenuController.alloc().initWithScriptPath_mainPid_(os.path.abspath(script_path), main_pid or 0)
 
     status_item = NSStatusBar.systemStatusBar().statusItemWithLength_(NSVariableStatusItemLength)
     status_item.button().setTitle_("壁")
-    status_item.button().setToolTip_("上一个桌面背景")
+    status_item.button().setToolTip_("上一个桌面背景 - 左键主菜单，右键快捷菜单")
 
+    # 设置左键菜单
     menu = NSMenu.alloc().init()
 
     def add_item(title, action_name):
@@ -175,6 +218,11 @@ def run_menu_bar(script_path, main_pid=None):
     add_item("退出菜单栏常驻", "quitMenu:")
 
     status_item.setMenu_(menu)
+
+    # 设置右键事件处理
+    button = status_item.button()
+    button.setTarget_(controller)
+    button.setAction_("mouseDown:")
     app.run()
 
 

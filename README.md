@@ -6,13 +6,6 @@
 现在可以在 macOS 上直接运行源码版：
 
 ```bash
-cd "上一个桌面背景 - 源代码"
-python3 main.py
-```
-
-如果使用当前整理后的源码目录：
-
-```bash
 python3 src/main.py
 ```
 

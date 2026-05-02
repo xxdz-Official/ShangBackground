@@ -44,7 +44,7 @@ try:
 except ImportError:
     SmoothTransition = None
 import random_copy
-from app_config import APP_NAME, FONT_FAMILY, IS_MACOS, IS_WINDOWS, STYLE_MAP, UI_ACCENT, UI_BG, UI_BORDER
+from app_config import APP_NAME, FONT_FAMILY, IS_MACOS, IS_WINDOWS, STYLE_MAP, UI_ACCENT, UI_BG, UI_BORDER, UI_PANEL
 from dependency_prompt import prompt_install_dependencies
 from platform_support import (
     configure_windows_fit_mode,
@@ -53,8 +53,9 @@ from platform_support import (
     get_screen_size,
     set_wallpaper_platform,
 )
-from ui_support import ask_image_file, ask_video_file, setup_modern_style
-from macos_video_wallpaper import start_video_wallpaper, stop_video_wallpaper
+from ui_support import ask_image_file, ask_video_file, setup_modern_style, RoundedFrame
+from macos_video_wallpaper import start_video_wallpaper, stop_video_wallpaper as stop_macos_video_wallpaper
+from windows_video_wallpaper import start_video_wallpaper as start_windows_video_wallpaper, stop_video_wallpaper as stop_windows_video_wallpaper
 from macos_menu_bar import COMMAND_FILE as MACOS_MENU_COMMAND_FILE, start_menu_bar, stop_menu_bar
 from wallpaper_sidebar import WallpaperSidebar
 
@@ -196,6 +197,9 @@ remote_release_notes = ""
 remote_download_urls = {"123云盘": "", "111网盘": "", "夸克网盘": ""}  # 如果不是夸克找我合作，打死我也不做夸克线路。。。
 show_update_flag = False
 check_failed = False
+
+# 本地版本信息
+main_version_info = "1.0.0"
 
 
 def load_config():
@@ -558,6 +562,23 @@ def random_wallpaper():
     log("=" * 50)
 
 
+def get_next_wallpaper():
+    """获取幻灯片模式下的下一张壁纸"""
+    global slide_images
+    if not slide_images:
+        return None
+
+    current = config.get("current_wallpaper", "")
+    if current in slide_images:
+        current_index = slide_images.index(current)
+        next_index = current_index + 1
+        if next_index < len(slide_images):
+            return slide_images[next_index]
+        return slide_images[0]
+
+    return slide_images[0] if slide_images else None
+
+
 def set_fit_mode(mode):
     try:
         configure_windows_fit_mode(mode, winreg, log)
@@ -569,16 +590,56 @@ def set_fit_mode(mode):
         log("设置适应模式失败: " + str(e))
 
 
-def get_next_wallpaper():
-    global slide_images
-    if not slide_images:
+def get_weighted_random_wallpaper(folder_path):
+    """优化的加权随机壁纸选择算法"""
+    try:
+        folder_abs = os.path.abspath(folder_path)
+        if not os.path.isdir(folder_abs):
+            return None
+
+        # 获取所有图片文件
+        all_files = os.listdir(folder_abs)
+        image_ext = ('.jpg', '.jpeg', '.png', '.bmp', '.gif')
+        original_images = [f for f in all_files
+                          if f.lower().endswith(image_ext) and not f.startswith(COPY_PREFIX)]
+
+        if not original_images:
+            return None
+
+        # 构建权重列表
+        weights = []
+        image_list = []
+
+        for img in original_images:
+            # 获取该图片的副本数量作为权重
+            copy_count = random_copy.get_copy_count(folder_abs, img)
+            weight = copy_count + 1  # 基础权重为1，加上副本数量
+            weights.extend([img] * weight)
+            image_list.append(os.path.join(folder_abs, img))
+
+        if not weights:
+            return None
+
+        # 排除当前壁纸
+        current = config.get("current_wallpaper", "")
+        current_basename = os.path.basename(current) if current else ""
+
+        if current_basename in weights:
+            # 创建候选列表，排除当前壁纸
+            candidates = [img for img in image_list if os.path.basename(img) != current_basename]
+            if candidates:
+                return random.choice(candidates)
+            else:
+                # 如果所有图片都是当前壁纸，返回随机一个
+                return random.choice(image_list)
+
+        # 正常随机选择
+        selected_basename = random.choice(weights)
+        return os.path.join(folder_abs, selected_basename)
+
+    except Exception as e:
+        log(f"加权随机选择失败: {e}")
         return None
-    current = config.get("current_wallpaper", "")
-    if current in slide_images:
-        idx = slide_images.index(current)
-        next_idx = (idx + 1) % len(slide_images)
-        return slide_images[next_idx]
-    return slide_images[0] if slide_images else None
 
 
 def slide_next():
@@ -586,19 +647,12 @@ def slide_next():
     with slide_timer_lock:
         if not slide_enabled:
             return
-        # 如果开启了随机顺序，使用带副本的随机列表
+        # 如果开启了随机顺序，使用优化的加权随机算法
         if config.get("shuffle", False):
             folder = config["slide_folder"]
             if folder and os.path.isdir(folder):
-                all_images = random_copy.get_all_images_with_copies(folder)
-                if all_images:
-                    current = config.get("current_wallpaper", "")
-                    available = [img for img in all_images if img != current]
-                    if available:
-                        next_img = random.choice(available)
-                    else:
-                        next_img = random.choice(all_images)
-                else:
+                next_img = get_weighted_random_wallpaper(folder)
+                if next_img is None:
                     next_img = get_next_wallpaper()
             else:
                 next_img = get_next_wallpaper()
@@ -714,37 +768,56 @@ def restart_slideshow():
 
 
 # ====================== 优化的渐变生成函数 ======================
-def create_gradient_wallpaper_optimized(color1, color2, angle=0):
-    """生成渐变壁纸，用向量化操作加快速度"""
+def create_gradient_wallpaper_optimized(color1, color2, angle=0, gradient_type="linear"):
+    """生成渐变壁纸，支持多种渐变类型"""
     try:
         screen_width = get_screen_size(root)[0]
         screen_height = get_screen_size(root)[1]
         r1, g1, b1 = int(color1[1:3], 16), int(color1[3:5], 16), int(color1[5:7], 16)
         r2, g2, b2 = int(color2[1:3], 16), int(color2[3:5], 16), int(color2[5:7], 16)
-        rad = math.radians(angle)
-        dx = math.cos(rad)
-        dy = math.sin(rad)
-        center_x = screen_width / 2
-        center_y = screen_height / 2
-        length = math.sqrt(screen_width ** 2 + screen_height ** 2)
-        start_x = center_x - dx * length / 2
-        start_y = center_y - dy * length / 2
-        end_x = center_x + dx * length / 2
-        end_y = center_y + dy * length / 2
-        line_dx = end_x - start_x
-        line_dy = end_y - start_y
-        line_len_sq = line_dx ** 2 + line_dy ** 2
+
         if HAS_NUMPY:
             x = np.arange(screen_width)
             y = np.arange(screen_height)
             xx, yy = np.meshgrid(x, y)
-            px = xx - start_x
-            py = yy - start_y
-            if line_len_sq == 0:
-                t = np.zeros((screen_height, screen_width))
-            else:
-                t = (px * line_dx + py * line_dy) / line_len_sq
-                t = np.clip(t, 0, 1)
+
+            if gradient_type == "radial":
+                # 径向渐变
+                center_x = screen_width / 2
+                center_y = screen_height / 2
+                max_radius = min(screen_width, screen_height) / 2
+                px = xx - center_x
+                py = yy - center_y
+                distance = np.sqrt(px**2 + py**2)
+                t = np.clip(distance / max_radius, 0, 1)
+
+            elif gradient_type == "diagonal":
+                # 对角渐变
+                t = (xx / screen_width + yy / screen_height) / 2
+
+            else:  # linear
+                # 线性渐变
+                rad = math.radians(angle)
+                dx = math.cos(rad)
+                dy = math.sin(rad)
+                center_x = screen_width / 2
+                center_y = screen_height / 2
+                length = math.sqrt(screen_width ** 2 + screen_height ** 2)
+                start_x = center_x - dx * length / 2
+                start_y = center_y - dy * length / 2
+                end_x = center_x + dx * length / 2
+                end_y = center_y + dy * length / 2
+                line_dx = end_x - start_x
+                line_dy = end_y - start_y
+                line_len_sq = line_dx ** 2 + line_dy ** 2
+                px = xx - start_x
+                py = yy - start_y
+                if line_len_sq == 0:
+                    t = np.zeros((screen_height, screen_width))
+                else:
+                    t = (px * line_dx + py * line_dy) / line_len_sq
+                    t = np.clip(t, 0, 1)
+
             r = (r1 * (1 - t) + r2 * t).astype(np.uint8)
             g = (g1 * (1 - t) + g2 * t).astype(np.uint8)
             b = (b1 * (1 - t) + b2 * t).astype(np.uint8)
@@ -753,39 +826,70 @@ def create_gradient_wallpaper_optimized(color1, color2, angle=0):
         else:
             img = Image.new("RGB", (screen_width, screen_height))
             pixels = img.load()
+
             for y in range(screen_height):
                 for x in range(screen_width):
-                    px = x - start_x
-                    py = y - start_y
-                    if line_len_sq == 0:
-                        t = 0
-                    else:
-                        t = (px * line_dx + py * line_dy) / line_len_sq
-                        t = max(0, min(1, t))
+                    if gradient_type == "radial":
+                        # 径向渐变
+                        center_x = screen_width / 2
+                        center_y = screen_height / 2
+                        max_radius = min(screen_width, screen_height) / 2
+                        distance = math.sqrt((x - center_x)**2 + (y - center_y)**2)
+                        t = min(distance / max_radius, 1.0)
+
+                    elif gradient_type == "diagonal":
+                        # 对角渐变
+                        t = (x / screen_width + y / screen_height) / 2
+
+                    else:  # linear
+                        # 线性渐变
+                        rad = math.radians(angle)
+                        dx = math.cos(rad)
+                        dy = math.sin(rad)
+                        center_x = screen_width / 2
+                        center_y = screen_height / 2
+                        length = math.sqrt(screen_width ** 2 + screen_height ** 2)
+                        start_x = center_x - dx * length / 2
+                        start_y = center_y - dy * length / 2
+                        end_x = center_x + dx * length / 2
+                        end_y = center_y + dy * length / 2
+                        line_dx = end_x - start_x
+                        line_dy = end_y - start_y
+                        line_len_sq = line_dx ** 2 + line_dy ** 2
+                        px = x - start_x
+                        py = y - start_y
+                        if line_len_sq == 0:
+                            t = 0
+                        else:
+                            t = (px * line_dx + py * line_dy) / line_len_sq
+                            t = max(0, min(1, t))
+
                     r = int(r1 * (1 - t) + r2 * t)
                     g = int(g1 * (1 - t) + g2 * t)
                     b = int(b1 * (1 - t) + b2 * t)
                     pixels[x, y] = (r, g, b)
+
         diy_dir = os.path.join(BASE_DIR, "diy")
         os.makedirs(diy_dir, exist_ok=True)
         bmp_path = os.path.join(diy_dir, "gradient_wallpaper.bmp")
         img.save(bmp_path)
-        log(f"渐变壁纸生成完成 (使用{'NumPy' if HAS_NUMPY else '优化Python'}引擎)")
+        log(f"渐变壁纸生成完成 (类型:{gradient_type}, 使用{'NumPy' if HAS_NUMPY else '优化Python'}引擎)")
         return bmp_path
     except Exception as e:
         log("创建渐变壁纸失败: " + str(e))
         return None
 
 
-def create_gradient_wallpaper(color1, color2, angle=0):
-    return create_gradient_wallpaper_optimized(color1, color2, angle)
+def create_gradient_wallpaper(color1, color2, angle=0, gradient_type="linear"):
+    return create_gradient_wallpaper_optimized(color1, color2, angle, gradient_type)
 
 
 def apply_gradient():
     color1 = config.get("solid_color", "#2d2d2d")
     color2 = config.get("gradient_color2", "#4a4a4a")
     angle = config.get("gradient_angle", 0)
-    bmp_path = create_gradient_wallpaper(color1, color2, angle)
+    gradient_type = config.get("gradient_type", "linear")
+    bmp_path = create_gradient_wallpaper(color1, color2, angle, gradient_type)
     if bmp_path and os.path.exists(bmp_path):
         set_wallpaper(bmp_path, "渐变壁纸", force=True)
 
@@ -1244,19 +1348,38 @@ def schedule_apply():
 
 
 def apply_video_wallpaper():
-    if not IS_MACOS:
-        show_message("提示", "视频壁纸当前仅支持 macOS")
-        return False
     video_path = config.get("video_file", "")
     if not video_path or not os.path.isfile(video_path):
         show_message("提示", "请先选择视频文件")
         return False
-    success, error = start_video_wallpaper(video_path, muted=config.get("video_muted", True))
-    if success:
-        log("视频壁纸已启动: " + os.path.basename(video_path))
-        return True
-    show_message("视频壁纸启动失败", error or "请确认已安装 pyobjc-framework-AVFoundation")
-    return False
+
+    if IS_MACOS:
+        success, error = start_video_wallpaper(video_path, muted=config.get("video_muted", True))
+        if success:
+            log("macOS视频壁纸已启动: " + os.path.basename(video_path))
+            return True
+        show_message("视频壁纸启动失败", error or "请确认已安装 pyobjc-framework-AVFoundation")
+        return False
+
+    elif IS_WINDOWS:
+        success, error = start_windows_video_wallpaper(video_path)
+        if success:
+            log("Windows视频壁纸已启动: " + os.path.basename(video_path))
+            return True
+        show_message("视频壁纸启动失败", error or "请确认已安装MPV播放器")
+        return False
+
+    else:
+        show_message("提示", "视频壁纸不支持当前平台")
+        return False
+
+
+def stop_video_wallpaper():
+    """统一的停止视频壁纸函数"""
+    if IS_MACOS:
+        stop_macos_video_wallpaper()
+    elif IS_WINDOWS:
+        stop_windows_video_wallpaper()
 
 
 def update_preview(img_path):
@@ -1499,36 +1622,56 @@ def preview_gradient_optimized():
     color1 = config.get("solid_color", "#2d2d2d")
     color2 = config.get("gradient_color2", "#4a4a4a")
     angle = config.get("gradient_angle", 0)
+    gradient_type = config.get("gradient_type", "linear")
     try:
         if not canvas:
             return
         width, height = 380, 240
         r1, g1, b1 = int(color1[1:3], 16), int(color1[3:5], 16), int(color1[5:7], 16)
         r2, g2, b2 = int(color2[1:3], 16), int(color2[3:5], 16), int(color2[5:7], 16)
-        rad = math.radians(angle)
-        dx = math.cos(rad)
-        dy = math.sin(rad)
-        center_x = width / 2
-        center_y = height / 2
-        length = math.sqrt(width ** 2 + height ** 2)
-        start_x = center_x - dx * length / 2
-        start_y = center_y - dy * length / 2
-        end_x = center_x + dx * length / 2
-        end_y = center_y + dy * length / 2
-        line_dx = end_x - start_x
-        line_dy = end_y - start_y
-        line_len_sq = line_dx ** 2 + line_dy ** 2
+
         if HAS_NUMPY:
             x = np.arange(width)
             y = np.arange(height)
             xx, yy = np.meshgrid(x, y)
-            px = xx - start_x
-            py = yy - start_y
-            if line_len_sq == 0:
-                t = np.zeros((height, width))
-            else:
-                t = (px * line_dx + py * line_dy) / line_len_sq
-                t = np.clip(t, 0, 1)
+
+            if gradient_type == "radial":
+                # 径向渐变
+                center_x = width / 2
+                center_y = height / 2
+                max_radius = min(width, height) / 2
+                px = xx - center_x
+                py = yy - center_y
+                distance = np.sqrt(px**2 + py**2)
+                t = np.clip(distance / max_radius, 0, 1)
+
+            elif gradient_type == "diagonal":
+                # 对角渐变
+                t = (xx / width + yy / height) / 2
+
+            else:  # linear
+                # 线性渐变
+                rad = math.radians(angle)
+                dx = math.cos(rad)
+                dy = math.sin(rad)
+                center_x = width / 2
+                center_y = height / 2
+                length = math.sqrt(width ** 2 + height ** 2)
+                start_x = center_x - dx * length / 2
+                start_y = center_y - dy * length / 2
+                end_x = center_x + dx * length / 2
+                end_y = center_y + dy * length / 2
+                line_dx = end_x - start_x
+                line_dy = end_y - start_y
+                line_len_sq = line_dx ** 2 + line_dy ** 2
+                px = xx - start_x
+                py = yy - start_y
+                if line_len_sq == 0:
+                    t = np.zeros((height, width))
+                else:
+                    t = (px * line_dx + py * line_dy) / line_len_sq
+                    t = np.clip(t, 0, 1)
+
             r = (r1 * (1 - t) + r2 * t).astype(np.uint8)
             g = (g1 * (1 - t) + g2 * t).astype(np.uint8)
             b = (b1 * (1 - t) + b2 * t).astype(np.uint8)
@@ -1537,19 +1680,49 @@ def preview_gradient_optimized():
         else:
             img = Image.new("RGB", (width, height))
             pixels = img.load()
+
             for y in range(height):
                 for x in range(width):
-                    px = x - start_x
-                    py = y - start_y
-                    if line_len_sq == 0:
-                        t = 0
-                    else:
-                        t = (px * line_dx + py * line_dy) / line_len_sq
-                        t = max(0, min(1, t))
+                    if gradient_type == "radial":
+                        # 径向渐变
+                        center_x = width / 2
+                        center_y = height / 2
+                        max_radius = min(width, height) / 2
+                        distance = math.sqrt((x - center_x)**2 + (y - center_y)**2)
+                        t = min(distance / max_radius, 1.0)
+
+                    elif gradient_type == "diagonal":
+                        # 对角渐变
+                        t = (x / width + y / height) / 2
+
+                    else:  # linear
+                        # 线性渐变
+                        rad = math.radians(angle)
+                        dx = math.cos(rad)
+                        dy = math.sin(rad)
+                        center_x = width / 2
+                        center_y = height / 2
+                        length = math.sqrt(width ** 2 + height ** 2)
+                        start_x = center_x - dx * length / 2
+                        start_y = center_y - dy * length / 2
+                        end_x = center_x + dx * length / 2
+                        end_y = center_y + dy * length / 2
+                        line_dx = end_x - start_x
+                        line_dy = end_y - start_y
+                        line_len_sq = line_dx ** 2 + line_dy ** 2
+                        px = x - start_x
+                        py = y - start_y
+                        if line_len_sq == 0:
+                            t = 0
+                        else:
+                            t = (px * line_dx + py * line_dy) / line_len_sq
+                            t = max(0, min(1, t))
+
                     r = int(r1 * (1 - t) + r2 * t)
                     g = int(g1 * (1 - t) + g2 * t)
                     b = int(b1 * (1 - t) + b2 * t)
                     pixels[x, y] = (r, g, b)
+
         preview_img = ImageTk.PhotoImage(img)
         canvas.delete("all")
         canvas.create_image(190, 120, image=preview_img)
@@ -2294,6 +2467,18 @@ def on_angle_changed(value):
         config["transition_animation"] = original_anim
 
 
+def on_gradient_type_changed():
+    config["gradient_type"] = gradient_type_var.get()
+    save_config()
+    if config["mode"] == "渐变":
+        preview_gradient()
+        # 切换类型时，临时关闭过渡动画，直接切换
+        original_anim = config.get("transition_animation", False)
+        config["transition_animation"] = False
+        apply_gradient()
+        config["transition_animation"] = original_anim
+
+
 def set_preset_gradient(color1, color2):
     config["solid_color"] = color1
     config["gradient_color2"] = color2
@@ -2321,6 +2506,24 @@ def set_preset_solid(color):
     if config["mode"] == "纯色":
         apply_solid()
         preview_solid()
+
+
+def on_solid_color_changed():
+    """当用户手动输入纯色时更新预览"""
+    try:
+        color = solid_color_var.get()
+        # 验证颜色格式
+        if not color.startswith('#') or len(color) != 7:
+            return
+        int(color[1:], 16)  # 验证是有效的十六进制颜色
+        config["solid_color"] = color
+        if solid_color_preview:
+            solid_color_preview.config(bg=color)
+        save_config()
+        if config["mode"] == "纯色":
+            preview_solid()
+    except ValueError:
+        pass  # 无效颜色，忽略
 
 
 def dummy_toggle():
@@ -3340,6 +3543,16 @@ class TransitionSettingsDialog:
             self.slide_direction_row.pack_forget()
 
 
+def has_admin_privileges():
+    """检查当前进程是否具备管理员/root 权限"""
+    if IS_WINDOWS:
+        try:
+            return ctypes.windll.shell32.IsUserAnAdmin() != 0
+        except Exception:
+            return False
+    return hasattr(os, "geteuid") and os.geteuid() == 0
+
+
 def register_global_hotkeys():
     """注册所有全局快捷键"""
     global hotkey_running, hotkey_thread
@@ -3349,6 +3562,14 @@ def register_global_hotkeys():
         log("[全局快捷键] keyboard 模块导入成功")
     except ImportError:
         log("[全局快捷键] keyboard 模块未安装，跳过注册")
+        return
+
+    if not has_admin_privileges():
+        log("[全局快捷键] 当前进程没有管理员权限，跳过注册")
+        show_message(
+            "权限不足",
+            "未检测到管理员权限，无法启用系统级全局快捷键。请以管理员身份重新启动程序。"
+        )
         return
 
     # 先取消现有注册
@@ -3421,8 +3642,23 @@ def init_global_hotkeys():
         log("[init_global_hotkeys] register_global_hotkeys 调用完成")
     except ImportError as e:
         log(f"[init_global_hotkeys] keyboard 模块未安装: {e}")
+        show_message(
+            "缺少依赖",
+            "未安装 keyboard 模块，无法启用全局快捷键。请先安装 keyboard 模块后重启软件。"
+        )
+    except OSError as e:
+        if hasattr(e, 'errno') and e.errno == 13 or "Must be run as administrator" in str(e):
+            log(f"[init_global_hotkeys] 权限错误: {e}")
+            show_message(
+                "管理员权限",
+                "全局快捷键初始化失败：请以管理员权限重新运行程序。"
+            )
+        else:
+            log(f"[init_global_hotkeys] 未知错误: {e}")
+            show_message("全局快捷键错误", f"初始化全局快捷键时发生错误：{e}")
     except Exception as e:
         log(f"[init_global_hotkeys] 未知错误: {e}")
+        show_message("全局快捷键错误", f"初始化全局快捷键时发生错误：{e}")
 
 
 def handle_command_line():
@@ -3457,9 +3693,13 @@ def handle_command_line():
     parser.add_argument('--next', action='store_true', help='切换到下一张壁纸')
     parser.add_argument('--random', action='store_true', help='随机切换壁纸')
     parser.add_argument('--show', action='store_true', help='显示主窗口')
-    parser.add_argument('--hide', action='store_true', help='隐藏主窗口（用于后台启动）')
+    parser.add_argument('--hide', action='store_true', help='隐藏主窗口')
     parser.add_argument('--jump-to-wallpaper', action='store_true', help='打开壁纸侧边栏')
     parser.add_argument('--set-wallpaper', type=str, help='设置指定壁纸')
+    parser.add_argument('--quick-settings', action='store_true', help='显示快速设置')
+    parser.add_argument('--switch-mode', action='store_true', help='切换壁纸模式')
+    parser.add_argument('--open-wallpaper-folder', action='store_true', help='打开壁纸文件夹')
+    parser.add_argument('--about', action='store_true', help='显示关于信息')
     args = parser.parse_args()
 
     if args.hide:
@@ -3543,6 +3783,22 @@ def handle_command_line():
         else:
             log(f"壁纸文件不存在: {target}")
             sys.exit(0)
+    elif args.quick_settings:
+        # 显示快速设置窗口
+        show_quick_settings()
+        sys.exit(0)
+    elif args.switch_mode:
+        # 切换壁纸模式
+        switch_wallpaper_mode()
+        sys.exit(0)
+    elif args.open_wallpaper_folder:
+        # 打开壁纸文件夹
+        open_wallpaper_folder()
+        sys.exit(0)
+    elif args.about:
+        # 显示关于信息
+        show_about()
+        sys.exit(0)
 
     # 如果没有匹配任何动作，正常启动（返回 False 让 main 继续）
     return False
@@ -3637,8 +3893,16 @@ def main():
     args_for_check.add_argument('--next', action='store_true')
     args_for_check.add_argument('--random', action='store_true')
     args_for_check.add_argument('--show', action='store_true')
+    args_for_check.add_argument('--hide', action='store_true')
+    args_for_check.add_argument('--jump-to-wallpaper', action='store_true')
+    args_for_check.add_argument('--quick-settings', action='store_true')
+    args_for_check.add_argument('--switch-mode', action='store_true')
+    args_for_check.add_argument('--open-wallpaper-folder', action='store_true')
+    args_for_check.add_argument('--about', action='store_true')
     parsed_args, _ = args_for_check.parse_known_args()
-    is_action_launch = (parsed_args.previous or parsed_args.next or parsed_args.random or parsed_args.show)
+    is_action_launch = (parsed_args.previous or parsed_args.next or parsed_args.random or parsed_args.show or
+                       parsed_args.jump_to_wallpaper or parsed_args.quick_settings or parsed_args.switch_mode or
+                       parsed_args.open_wallpaper_folder or parsed_args.about)
     if not is_action_launch:
         # 在独立线程中上报（避免阻塞主窗口）
         report_usage()
@@ -3664,6 +3928,7 @@ def main():
         "requests": requests is not None,
         "numpy": HAS_NUMPY,
         "psutil": psutil is not None,
+        "keyboard": None,
     }
     if not prompt_install_dependencies(messagebox, dependency_availability, parent=root):
         try:
@@ -3768,7 +4033,7 @@ def main():
     style = ttk.Style()
     setup_modern_style(style)
 
-    main_container = ttk.Frame(root, style="Panel.TFrame")
+    main_container = RoundedFrame(root, radius=20, bg=UI_PANEL)
     main_container.pack(fill="both", expand=True, padx=24, pady=18)
 
     # ========== 在窗口完全加载后再加载标题图片（带从右向左缓动动画） ==========
@@ -5306,7 +5571,7 @@ def main():
     ttk.Button(video_file_frame, text="浏览", command=browse_video, width=6).pack(side="left")
     ttk.Button(video_button_frame, text="播放视频壁纸", command=apply_video_wallpaper, width=14).pack(side="left")
     ttk.Button(video_button_frame, text="停止视频壁纸", command=stop_video_from_ui, width=14).pack(side="left", padx=8)
-    ttk.Label(video_frame, text="macOS 会使用独立桌面层级视频播放器，窗口不接收鼠标事件。", foreground="#666").pack(anchor="w", pady=(8, 0))
+    ttk.Label(video_frame, text="视频壁纸会使用独立播放器，窗口不接收鼠标事件。", foreground="#666").pack(anchor="w", pady=(8, 0))
     gradient_frame = ttk.Frame(dynamic_frame)
     ttk.Label(gradient_frame, text="渐变设置", font=(FONT_FAMILY, 10, "bold")).pack(anchor="w", pady=(0, 10))
     color1_frame = ttk.Frame(gradient_frame)
@@ -5340,6 +5605,14 @@ def main():
     angle_label = ttk.Label(angle_frame, textvariable=angle_var, width=5)
     angle_label.pack(side="left", padx=5)
     ttk.Label(angle_frame, text="度").pack(side="left")
+    type_frame = ttk.Frame(gradient_frame)
+    type_frame.pack(fill="x", pady=5)
+    ttk.Label(type_frame, text="渐变类型:", width=10).pack(side="left")
+    gradient_type_var = tk.StringVar(value=config.get("gradient_type", "linear"))
+    type_combo = ttk.Combobox(type_frame, textvariable=gradient_type_var,
+                              values=["linear", "radial", "diagonal"], state="readonly", width=10)
+    type_combo.pack(side="left", padx=5)
+    type_combo.bind("<<ComboboxSelected>>", lambda e: on_gradient_type_changed())
     preset_frame = ttk.Frame(gradient_frame)
     preset_frame.pack(fill="x", pady=10)
     ttk.Label(preset_frame, text="预设渐变:", width=10).pack(anchor="w")
@@ -5363,6 +5636,7 @@ def main():
     solid_color_var = tk.StringVar(value=config.get("solid_color", "#2d2d2d"))
     solid_color_entry = ttk.Entry(solid_color_frame, textvariable=solid_color_var, width=10)
     solid_color_entry.pack(side="left", padx=5)
+    solid_color_entry.bind("<KeyRelease>", lambda e: on_solid_color_changed())
     solid_color_preview = tk.Frame(solid_color_frame, width=30, height=25, bg=config.get("solid_color", "#2d2d2d"),
                                    relief="sunken", borderwidth=1, cursor="hand2")
     solid_color_preview.bind("<Button-1>", lambda e: choose_solid_color())
@@ -6805,6 +7079,119 @@ def main():
     root.mainloop()
     # 如果主循环异常退出，强制结束进程
     force_exit()
+
+
+# ====================== 右键菜单功能函数 ======================
+def show_quick_settings():
+    """显示快速设置窗口"""
+    try:
+        quick_win = tk.Tk()
+        quick_win.title("快速设置")
+        quick_win.geometry("300x200")
+        quick_win.resizable(False, False)
+
+        # 设置图标
+        icon_path = os.path.join(BASE_DIR, "img", "LOGO.ico")
+        if os.path.exists(icon_path):
+            try:
+                quick_win.iconbitmap(icon_path)
+            except:
+                pass
+
+        main_frame = tk.Frame(quick_win, padx=20, pady=20)
+        main_frame.pack(fill="both", expand=True)
+
+        tk.Label(main_frame, text="快速设置", font=(FONT_FAMILY, 12, "bold")).pack(pady=(0, 10))
+
+        # 模式切换按钮
+        def toggle_slideshow():
+            current_mode = config.get("mode", "图片")
+            if current_mode == "幻灯片放映":
+                config["mode"] = "图片"
+                show_message("提示", "已切换到图片模式")
+            else:
+                config["mode"] = "幻灯片放映"
+                show_message("提示", "已切换到幻灯片放映模式")
+            save_config()
+
+        tk.Button(main_frame, text="切换模式", command=toggle_slideshow).pack(pady=5)
+
+        # 打开设置按钮
+        def open_settings():
+            quick_win.destroy()
+            show_main_window()
+
+        tk.Button(main_frame, text="打开主设置", command=open_settings).pack(pady=5)
+
+        quick_win.mainloop()
+    except Exception as e:
+        log(f"显示快速设置失败: {e}")
+        show_message("错误", f"显示快速设置失败: {e}")
+
+
+def switch_wallpaper_mode():
+    """切换壁纸模式"""
+    try:
+        modes = ["幻灯片放映", "图片", "视频", "纯色", "渐变"]
+        current_mode = config.get("mode", "图片")
+        current_index = modes.index(current_mode) if current_mode in modes else 0
+        next_index = (current_index + 1) % len(modes)
+        config["mode"] = modes[next_index]
+        save_config()
+        show_message("提示", f"已切换到{modes[next_index]}模式")
+    except Exception as e:
+        log(f"切换模式失败: {e}")
+        show_message("错误", f"切换模式失败: {e}")
+
+
+def open_wallpaper_folder():
+    """打开壁纸文件夹"""
+    try:
+        folder = config.get("slide_folder", "")
+        if folder and os.path.isdir(folder):
+            if IS_MACOS:
+                subprocess.run(["open", folder])
+            elif IS_WINDOWS:
+                subprocess.run(["explorer", folder])
+            else:
+                subprocess.run(["xdg-open", folder])
+        else:
+            show_message("提示", "请先设置壁纸文件夹")
+    except Exception as e:
+        log(f"打开壁纸文件夹失败: {e}")
+        show_message("错误", f"打开壁纸文件夹失败: {e}")
+
+
+def show_about():
+    """显示关于信息"""
+    try:
+        about_win = tk.Tk()
+        about_win.title("关于")
+        about_win.geometry("300x200")
+        about_win.resizable(False, False)
+
+        # 设置图标
+        icon_path = os.path.join(BASE_DIR, "img", "LOGO.ico")
+        if os.path.exists(icon_path):
+            try:
+                about_win.iconbitmap(icon_path)
+            except:
+                pass
+
+        main_frame = tk.Frame(about_win, padx=20, pady=20)
+        main_frame.pack(fill="both", expand=True)
+
+        tk.Label(main_frame, text="上一个桌面背景", font=(FONT_FAMILY, 14, "bold")).pack(pady=(0, 10))
+        tk.Label(main_frame, text=f"版本: {main_version_info}").pack(pady=2)
+        tk.Label(main_frame, text="作者: 小小电子xxdz").pack(pady=2)
+        tk.Label(main_frame, text="基于 Python + Tkinter").pack(pady=2)
+
+        tk.Button(main_frame, text="确定", command=about_win.destroy).pack(pady=10)
+
+        about_win.mainloop()
+    except Exception as e:
+        log(f"显示关于信息失败: {e}")
+        show_message("错误", f"显示关于信息失败: {e}")
 
 
 if __name__ == "__main__":
