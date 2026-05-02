@@ -1,7 +1,7 @@
-# ShangBackground
+# Windows 支持（原版）
 实现“上一个桌面背景”的右键菜单，而且有更多的壁纸切换动画，可高度自定义！由B站UP_小小电子xxdz开发
 
-## macOS 本机支持
+## macOS 支持（感谢@zjhcx贡献）
 
 现在可以在 macOS 上直接运行源码版：
 
