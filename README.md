@@ -1,14 +1,18 @@
+<h1><img src="https://xxdz-official.github.io/ShangBackground/img/LOGO.png" width="100" height="100" style="display: inline-block; vertical-align: middle;"> 上一个桌面背景</h1>
+作者：小小电子xxdz
+
+---
+
 # Windows 支持（原版）
+
 实现“上一个桌面背景”的右键菜单，而且有更多的壁纸切换动画，可高度自定义！由B站UP_小小电子xxdz开发
 
 ## macOS 支持（感谢@zjhcx贡献）
 
 现在可以在 macOS 上直接运行源码版：
 
-```bash
-cd "上一个桌面背景 - 源代码"
-python3 main.py
-```
+    cd "上一个桌面背景 - 源代码"
+    python3 main.py
 
 macOS 支持的能力：
 
@@ -19,8 +23,6 @@ macOS 支持的能力：
 
 建议依赖：
 
-```bash
-python3 -m pip install pillow requests numpy pystray psutil
-```
+    python3 -m pip install pillow requests numpy pystray psutil
 
 其中 `psutil` 为可选依赖；未安装时仅跳过旧进程清理。
