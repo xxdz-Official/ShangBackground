@@ -22,12 +22,22 @@ IMAGE_FILETYPES = [
     ("GIF 图片", "*.gif"),
 ]
 
+VIDEO_FILETYPES = [
+    ("MP4 视频", "*.mp4"),
+    ("MOV 视频", "*.mov"),
+    ("M4V 视频", "*.m4v"),
+    ("AVI 视频", "*.avi"),
+    ("MKV 视频", "*.mkv"),
+]
+
 DEPENDENCIES = [
     {"module": "PIL", "package": "pillow", "required": True, "desc": "图片读取、缩略图和壁纸生成"},
     {"module": "requests", "package": "requests", "required": False, "desc": "版本检查和使用统计"},
     {"module": "numpy", "package": "numpy", "required": False, "desc": "更快的渐变/转场生成"},
     {"module": "pystray", "package": "pystray", "required": False, "desc": "系统托盘图标"},
     {"module": "psutil", "package": "psutil", "required": False, "desc": "进程清理与辅助控制"},
+    {"module": "AppKit", "package": "pyobjc-framework-Cocoa", "required": False, "desc": "macOS 菜单栏常驻"},
+    {"module": "AVFoundation", "package": "pyobjc-framework-AVFoundation", "required": False, "desc": "macOS 视频壁纸播放器"},
 ]
 
 STYLE_MAP = {"填充": 10, "适应": 6, "拉伸": 2, "平铺": 1, "居中": 0}

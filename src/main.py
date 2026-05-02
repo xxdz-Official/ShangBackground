@@ -53,7 +53,9 @@ from platform_support import (
     get_screen_size,
     set_wallpaper_platform,
 )
-from ui_support import ask_image_file, setup_modern_style
+from ui_support import ask_image_file, ask_video_file, setup_modern_style
+from macos_video_wallpaper import start_video_wallpaper, stop_video_wallpaper
+from macos_menu_bar import COMMAND_FILE as MACOS_MENU_COMMAND_FILE, start_menu_bar, stop_menu_bar
 from wallpaper_sidebar import WallpaperSidebar
 
 # 试试看能不能导入numpy，能的话会快一丢丢 (不能也没关系啦)
@@ -162,6 +164,8 @@ chk_next = None
 chk_random = None
 chk_prev = None
 single_frame = None
+video_frame = None
+video_entry = None
 gradient_frame = None
 color1_var = None
 color1_preview = None
@@ -202,6 +206,8 @@ def load_config():
         "shuffle": False,
         "fit_mode": "填充",
         "single_image": "",
+        "video_file": "",
+        "video_muted": True,
         "solid_color": "#4facfe",
         "gradient_color2": "#00f2fe",
         "gradient_angle": 60,
@@ -1233,6 +1239,24 @@ def schedule_apply():
         apply_gradient()
     elif config["mode"] == "纯色":
         apply_solid()
+    elif config["mode"] == "视频":
+        apply_video_wallpaper()
+
+
+def apply_video_wallpaper():
+    if not IS_MACOS:
+        show_message("提示", "视频壁纸当前仅支持 macOS")
+        return False
+    video_path = config.get("video_file", "")
+    if not video_path or not os.path.isfile(video_path):
+        show_message("提示", "请先选择视频文件")
+        return False
+    success, error = start_video_wallpaper(video_path, muted=config.get("video_muted", True))
+    if success:
+        log("视频壁纸已启动: " + os.path.basename(video_path))
+        return True
+    show_message("视频壁纸启动失败", error or "请确认已安装 pyobjc-framework-AVFoundation")
+    return False
 
 
 def update_preview(img_path):
@@ -1593,6 +1617,37 @@ def monitor_wallpaper_changes_on_main_thread():
         log(f"主线程监控壁纸变化出错: {e}")
     if root and wallpaper_monitor_running:
         root.after(1000, monitor_wallpaper_changes_on_main_thread)
+
+
+def poll_macos_menu_commands():
+    if not IS_MACOS:
+        return
+    try:
+        if os.path.exists(MACOS_MENU_COMMAND_FILE):
+            with open(MACOS_MENU_COMMAND_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            try:
+                os.remove(MACOS_MENU_COMMAND_FILE)
+            except Exception:
+                pass
+            command = data.get("command")
+            if command == "show":
+                if root:
+                    root.deiconify()
+                    root.lift()
+                    root.focus_force()
+            elif command == "previous":
+                previous_wallpaper()
+            elif command == "next":
+                next_wallpaper()
+            elif command == "random":
+                random_wallpaper()
+            elif command == "jump":
+                subprocess.Popen([sys.executable, os.path.abspath(__file__), "--jump-to-wallpaper"])
+    except Exception as e:
+        log(f"处理 macOS 菜单栏命令失败: {e}")
+    if root:
+        root.after(500, poll_macos_menu_commands)
 
 
 WNDPROC = ctypes.WINFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int) if IS_WINDOWS else (lambda func: func)
@@ -2067,14 +2122,17 @@ def browse_folder():
 
 
 def on_mode_changed():
-    global single_entry
+    global single_entry, video_entry
     mode = mode_var.get()
     config["mode"] = mode
     save_config()
     slide_frame.pack_forget()
     single_frame.pack_forget()
+    video_frame.pack_forget()
     gradient_frame.pack_forget()
     solid_frame.pack_forget()
+    if mode != "视频":
+        stop_video_wallpaper()
     if mode == "幻灯片放映":
         slide_frame.pack(fill="both", expand=True)
         chk_next.config(state="normal")
@@ -2147,6 +2205,23 @@ def on_mode_changed():
                 log(f"图片模式自动使用当前壁纸: {current_wallpaper}")
             else:
                 show_message("提示喵", "请先选择图片文件")
+    elif mode == "视频":
+        video_frame.pack(fill="both", expand=True)
+        chk_next.config(state="disabled")
+        chk_random.config(state="disabled")
+        chk_prev.config(state="disabled")
+        chk_jump.config(state="disabled")
+        config["ctx_last_wallpaper"] = ctx_prev_var.get()
+        save_config()
+        register_context()
+        stop_slideshow()
+        if config.get("video_file") and os.path.exists(config["video_file"]):
+            if video_entry:
+                video_entry.delete(0, "end")
+                video_entry.insert(0, os.path.basename(config["video_file"]))
+            apply_video_wallpaper()
+        else:
+            show_message("提示喵", "请先选择视频文件")
     elif mode == "纯色":
         solid_frame.pack(fill="both", expand=True)
         chk_next.config(state="disabled")
@@ -2266,6 +2341,7 @@ def open_init_dialog():
 
 def exit_program():
     """彻底退出程序"""
+    stop_video_wallpaper()
     # 直接关闭，不显示确认对话框
     if root:
         root.after(0, lambda: root.quit() or root.destroy())
@@ -2513,6 +2589,7 @@ class InitSettingsDialog:
                         pass
 
                 # 退出程序：直接强制退出，避免后台线程导致进程残留
+                stop_video_wallpaper()
                 self.dialog.destroy()
                 import os as os_module
                 os_module._exit(0)
@@ -3522,7 +3599,7 @@ def main():
     import logging
     logging.disable(logging.CRITICAL)  # 完全禁用所有日志输出（包括第三方库）
     global config, root, canvas, slide_frame, shuffle_var, chk_next, chk_random, chk_prev
-    global single_frame, gradient_frame, color1_var, color1_preview, color2_var, color2_preview, angle_var
+    global single_frame, video_frame, video_entry, gradient_frame, color1_var, color1_preview, color2_var, color2_preview, angle_var
     global solid_frame, solid_color_var, solid_color_preview, mode_var, fit_var
     global ctx_prev_var, ctx_next_var, ctx_random_var, ctx_personalize_var, ctx_jump_var, ctx_file_wallpaper_var, wallpaper_monitor_running, wallpaper_monitor_last
     global preview_images_frame, wallpaper_preview_labels, folder_entry
@@ -3855,14 +3932,13 @@ def main():
     chk_tray = ttk.Checkbutton(tray_row_frame, text="系统托盘图标", variable=tray_icon_var)
     chk_tray.pack(side="left")
     if IS_MACOS:
-        tray_icon_var.set(False)
-        run_in_background_var.set(False)
-        config["tray_icon"] = False
-        config["run_in_background"] = False
-        chk_tray.configure(state="disabled")
-        chk_background.configure(state="disabled")
+        chk_tray.configure(text="菜单栏常驻")
+        tray_icon_var.set(config.get("tray_icon", True))
+        run_in_background_var.set(config.get("run_in_background", True))
+        config["tray_icon"] = tray_icon_var.get()
+        config["run_in_background"] = run_in_background_var.get()
         save_config()
-        log("macOS 下已禁用 pystray 托盘和隐藏到后台，避免 AppKit 与 Tk 主循环冲突")
+        log("macOS 下使用独立原生菜单栏 helper，避免 AppKit 与 Tk 主循环冲突")
 
     # ========== 托盘图标相关函数 ==========
     tray_icon_obj = None
@@ -4266,7 +4342,11 @@ def main():
         """创建托盘图标"""
         global tray_icon_obj
         if IS_MACOS:
-            log("macOS 下跳过 pystray 托盘创建")
+            success, error = start_menu_bar(os.path.abspath(__file__), main_pid=os.getpid())
+            if success:
+                log("macOS 菜单栏常驻已启动")
+            else:
+                show_message("菜单栏启动失败", error)
             return
         try:
             import pystray
@@ -4377,6 +4457,7 @@ def main():
                 elif action == "exit":
                     def do_exit():
                         log("用户通过托盘菜单退出程序")
+                        stop_video_wallpaper()
                         # 直接强制退出，避免复杂的清理逻辑导致死锁
                         import os as os_module
                         os_module._exit(0)
@@ -4408,6 +4489,10 @@ def main():
     def destroy_tray_icon():
         """销毁托盘图标"""
         global tray_icon_obj
+        if IS_MACOS:
+            stop_menu_bar()
+            log("macOS 菜单栏常驻已停止")
+            return
         if tray_icon_obj is not None:
             try:
                 tray_icon_obj.stop()
@@ -4581,6 +4666,7 @@ def main():
                         new_menu_items.append(pystray.MenuItem(display_label, lambda: show_about_window()))
                     elif action == "exit":
                         def do_exit():
+                            stop_video_wallpaper()
                             import os as os_module
                             os_module._exit(0)
                         new_menu_items.append(pystray.MenuItem(display_label, do_exit))
@@ -4820,7 +4906,7 @@ def main():
     mode_frame.pack(fill="x", pady=(10, 16))
     ttk.Label(mode_frame, text="背景模式", font=(FONT_FAMILY, 12)).pack(anchor="w", pady=(0, 6))
     mode_var = tk.StringVar(value=config["mode"])
-    mode_combo = ttk.Combobox(mode_frame, textvariable=mode_var, values=["幻灯片放映", "图片", "纯色", "渐变"],
+    mode_combo = ttk.Combobox(mode_frame, textvariable=mode_var, values=["幻灯片放映", "图片", "视频", "纯色", "渐变"],
                               state="readonly", width=22)
     mode_combo.pack(anchor="w")
     dynamic_frame = ttk.Frame(settings_frame)
@@ -5191,6 +5277,36 @@ def main():
                                state="readonly", width=10)
     fit_combo_s.pack(side="left", padx=5)
     fit_combo_s.bind("<<ComboboxSelected>>", fit_change)
+    video_frame = ttk.Frame(dynamic_frame)
+    ttk.Label(video_frame, text="视频壁纸设置", font=(FONT_FAMILY, 10, "bold")).pack(anchor="w", pady=(0, 10))
+    video_file_frame = ttk.Frame(video_frame)
+    video_file_frame.pack(fill="x", pady=5)
+    ttk.Label(video_file_frame, text="视频文件:", width=8).pack(side="left")
+    video_entry = ttk.Entry(video_file_frame, width=25)
+    video_entry.pack(side="left", padx=5)
+    if config.get("video_file"):
+        video_entry.insert(0, os.path.basename(config["video_file"]))
+
+    def browse_video():
+        f = ask_video_file(root)
+        if f:
+            config["video_file"] = f
+            video_entry.delete(0, "end")
+            video_entry.insert(0, os.path.basename(f))
+            save_config()
+            if config["mode"] == "视频":
+                apply_video_wallpaper()
+
+    def stop_video_from_ui():
+        stop_video_wallpaper()
+        log("视频壁纸已停止")
+
+    video_button_frame = ttk.Frame(video_frame)
+    video_button_frame.pack(fill="x", pady=5)
+    ttk.Button(video_file_frame, text="浏览", command=browse_video, width=6).pack(side="left")
+    ttk.Button(video_button_frame, text="播放视频壁纸", command=apply_video_wallpaper, width=14).pack(side="left")
+    ttk.Button(video_button_frame, text="停止视频壁纸", command=stop_video_from_ui, width=14).pack(side="left", padx=8)
+    ttk.Label(video_frame, text="macOS 会使用独立桌面层级视频播放器，窗口不接收鼠标事件。", foreground="#666").pack(anchor="w", pady=(8, 0))
     gradient_frame = ttk.Frame(dynamic_frame)
     ttk.Label(gradient_frame, text="渐变设置", font=(FONT_FAMILY, 10, "bold")).pack(anchor="w", pady=(0, 10))
     color1_frame = ttk.Frame(gradient_frame)
@@ -5353,12 +5469,12 @@ def main():
         global root, tray_icon_obj
 
         # 如果开启了后台运行，则仅隐藏窗口，不退出程序
-        if config.get("run_in_background", True) and not IS_MACOS:
+        if config.get("run_in_background", True):
             log("后台运行模式：窗口隐藏到托盘")
             root.withdraw()  # 隐藏窗口
             # 确保托盘图标存在
             if not config.get("tray_icon", False):
-                # 如果托盘图标未开启，自动开启
+                # 如果托盘图标/菜单栏未开启，自动开启
                 config["tray_icon"] = True
                 save_config()
                 root.after(100, create_tray_icon)
@@ -5393,6 +5509,7 @@ def main():
 
             # 停止幻灯片
             stop_slideshow()
+            stop_video_wallpaper()
 
             # 清理触发文件
             for f in [TRIGGER_FILE_PREV, TRIGGER_FILE_NEXT, TRIGGER_FILE_RANDOM]:
@@ -5499,6 +5616,7 @@ def main():
     if IS_MACOS:
         root.after(1000, monitor_wallpaper_changes_on_main_thread)
         log("壁纸监控已切换为 macOS 主线程轮询")
+        root.after(500, poll_macos_menu_commands)
     else:
         wallpaper_monitor_thread = threading.Thread(target=monitor_wallpaper_changes, daemon=True)
         wallpaper_monitor_thread.start()
@@ -5744,6 +5862,7 @@ def main():
     # 设置一个定时器，在窗口关闭后强制退出（备用方案）
     def force_exit():
         import sys
+        stop_video_wallpaper()
         sys.exit(0)
 
     # ====================== 版本检查与更新功能 ======================

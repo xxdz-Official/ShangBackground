@@ -10,6 +10,7 @@ from app_config import (
     UI_BG,
     UI_PANEL,
     UI_TEXT,
+    VIDEO_FILETYPES,
 )
 
 
@@ -40,4 +41,12 @@ def ask_image_file(parent=None):
         parent=parent,
         title="选择图片",
         filetypes=IMAGE_FILETYPES,
+    )
+
+
+def ask_video_file(parent=None):
+    return filedialog.askopenfilename(
+        parent=parent,
+        title="选择视频",
+        filetypes=VIDEO_FILETYPES,
     )
