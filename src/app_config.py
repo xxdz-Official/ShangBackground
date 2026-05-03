@@ -5,13 +5,18 @@ IS_WINDOWS = sys.platform.startswith("win")
 IS_MACOS = sys.platform == "darwin"
 APP_NAME = "xxdz_上一个桌面背景"
 
-UI_BG = "#f6f8fb"
+UI_BG = "#f7f8fa"
 UI_PANEL = "#ffffff"
-UI_ACCENT = "#12c7b7"
-UI_ACCENT_DARK = "#0f766e"
-UI_TEXT = "#1f2937"
-UI_MUTED = "#6b7280"
-UI_BORDER = "#d8dee9"
+UI_SURFACE = "#f2f4f7"
+UI_ACCENT = "#0d99ff"
+UI_ACCENT_DARK = "#007be5"
+UI_ACCENT_SOFT = "#e5f4ff"
+UI_TEXT = "#111827"
+UI_MUTED = "#667085"
+UI_BORDER = "#d0d5dd"
+UI_BORDER_SOFT = "#eaecf0"
+UI_DANGER = "#f04438"
+UI_SUCCESS = "#12b76a"
 FONT_FAMILY = "Microsoft YaHei" if IS_WINDOWS else ("PingFang SC" if IS_MACOS else "Noto Sans CJK SC")
 
 IMAGE_FILETYPES = [
@@ -31,6 +36,7 @@ VIDEO_FILETYPES = [
 ]
 
 DEPENDENCIES = [
+    {"module": "PySide6", "package": "PySide6", "required": True, "desc": "Qt Quick/QML 图形界面与现代圆角控件"},
     {"module": "PIL", "package": "pillow", "required": True, "desc": "图片读取、缩略图和壁纸生成"},
     {"module": "requests", "package": "requests", "required": False, "desc": "版本检查和使用统计"},
     {"module": "numpy", "package": "numpy", "required": False, "desc": "更快的渐变/转场生成"},

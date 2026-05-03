@@ -12,6 +12,16 @@ from app_config import IS_MACOS
 
 PID_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "macos_menu_bar.pid")
 COMMAND_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "macos_menu_command.json")
+CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "shezhi.json")
+TRAY_ACTION_LABELS = {
+    "show": "显示主界面",
+    "previous": "上一张壁纸",
+    "next": "下一张壁纸",
+    "random": "随机壁纸",
+    "about": "关于",
+    "jump": "跳转到壁纸",
+    "exit": "退出菜单栏常驻",
+}
 
 
 def _read_pid():
@@ -94,6 +104,14 @@ def _write_command(command):
         json.dump({"command": command, "time": time.time()}, f)
 
 
+def _load_config():
+    try:
+        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
 def run_menu_bar(script_path, main_pid=None):
     import objc
     from AppKit import (
@@ -162,6 +180,24 @@ def run_menu_bar(script_path, main_pid=None):
                 pass
             NSApp.terminate_(None)
 
+        def dispatch_(self, sender):
+            action = sender.representedObject()
+            if action == "exit":
+                self.quitMenu_(sender)
+            elif action == "about":
+                self._send_or_launch("about", "--about")
+            elif action == "open-folder":
+                self._send_or_launch("open-wallpaper-folder", "--open-wallpaper-folder")
+            elif action:
+                arg_map = {
+                    "show": "--show",
+                    "previous": "--previous",
+                    "next": "--next",
+                    "random": "--random",
+                    "jump": "--jump-to-wallpaper",
+                }
+                self._send_or_launch(action, arg_map.get(action, f"--{action}"))
+
         def rightClickMenu_(self, sender):
             # 创建右键菜单
             right_menu = NSMenu.alloc().init()
@@ -204,18 +240,19 @@ def run_menu_bar(script_path, main_pid=None):
     # 设置左键菜单
     menu = NSMenu.alloc().init()
 
-    def add_item(title, action_name):
+    def add_item(title, action_name, represented=None):
         item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(title, action_name, "")
         item.setTarget_(controller)
+        if represented is not None:
+            item.setRepresentedObject_(represented)
         menu.addItem_(item)
 
-    add_item("显示主界面", "show:")
-    add_item("上一张壁纸", "previous:")
-    add_item("下一张壁纸", "next:")
-    add_item("随机壁纸", "random:")
-    add_item("跳转到壁纸", "jump:")
-    menu.addItem_(NSMenuItem.separatorItem())
-    add_item("退出菜单栏常驻", "quitMenu:")
+    config = _load_config()
+    tray_items = config.get("tray_menu_items") or ["show", "previous", "next", "random", "about", "jump", "exit"]
+    for action in tray_items:
+        if action not in TRAY_ACTION_LABELS:
+            continue
+        add_item(TRAY_ACTION_LABELS[action], "dispatch:", action)
 
     status_item.setMenu_(menu)
 
