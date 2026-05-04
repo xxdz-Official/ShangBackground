@@ -56,13 +56,17 @@ def start_menu_bar(script_path, main_pid=None):
     if pid and _is_process_alive(pid):
         return True, ""
 
-    cmd = [
-        sys.executable,
-        os.path.abspath(__file__),
-        "--run",
-        "--script",
-        os.path.abspath(script_path),
-    ]
+    if getattr(sys, "frozen", False):
+        executable = os.path.abspath(sys.executable)
+        cmd = [executable, "--macos-menu-bar-helper", "--run", "--script", executable]
+    else:
+        cmd = [
+            sys.executable,
+            os.path.abspath(__file__),
+            "--run",
+            "--script",
+            os.path.abspath(script_path),
+        ]
     if main_pid:
         cmd.extend(["--main-pid", str(main_pid)])
     try:
@@ -155,7 +159,10 @@ def run_menu_bar(script_path, main_pid=None):
                     return
                 except Exception:
                     pass
-            subprocess.Popen([sys.executable, self.script_path, *args])
+            if getattr(sys, "frozen", False) or os.path.abspath(self.script_path) == os.path.abspath(sys.executable):
+                subprocess.Popen([self.script_path, *args])
+            else:
+                subprocess.Popen([sys.executable, self.script_path, *args])
 
         def show_(self, sender):
             self._send_or_launch("show", "--show")

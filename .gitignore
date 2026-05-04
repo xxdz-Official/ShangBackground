@@ -4,3 +4,7 @@ src/random.json
 *.log
 *.pid
 diy
+build
+dist
+*.egg-info
+*.egg

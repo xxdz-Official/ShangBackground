@@ -133,12 +133,20 @@ def start_video_wallpaper(video_path, muted=True):
         return False, "请选择 mp4/mov/m4v/avi/mkv 视频文件"
 
     stop_video_wallpaper()
-    cmd = [
-        sys.executable,
-        os.path.abspath(__file__),
-        "--run-player",
-        os.path.abspath(video_path),
-    ]
+    if getattr(sys, "frozen", False):
+        cmd = [
+            os.path.abspath(sys.executable),
+            "--macos-video-wallpaper-helper",
+            "--run-player",
+            os.path.abspath(video_path),
+        ]
+    else:
+        cmd = [
+            sys.executable,
+            os.path.abspath(__file__),
+            "--run-player",
+            os.path.abspath(video_path),
+        ]
     if muted:
         cmd.append("--muted")
     try:

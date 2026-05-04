@@ -5,13 +5,20 @@ import QtQuick.Layouts
 
 ApplicationWindow {
     id: root
+    property var backend: null
     width: 980
     height: 560
-    minimumWidth: 920
-    minimumHeight: 520
+    minimumWidth: 760
+    minimumHeight: 460
     visible: true
     title: "xxdz_上一个桌面背景"
     color: "#f7f8fa"
+    onClosing: function(close) {
+        if (!forceQuit && backend.value("run_in_background") === true) {
+            close.accepted = false
+            root.hide()
+        }
+    }
 
     readonly property color bg: "#f7f8fa"
     readonly property color panel: "#ffffff"
@@ -22,12 +29,18 @@ ApplicationWindow {
     readonly property color borderSoft: "#eaecf0"
     readonly property color accent: "#0d99ff"
     readonly property color accentSoft: "#e5f4ff"
+    readonly property url appIcon: Qt.resolvedUrl("../img/LOGO.ico")
+    readonly property url aboutSprite: Qt.resolvedUrl("../img/about.png")
+    readonly property url aboutWindowImage: Qt.resolvedUrl("../img/about-window.png")
     property var modes: ["幻灯片放映", "图片", "视频", "纯色", "渐变"]
     property var fitModes: ["填充", "适应", "拉伸", "平铺", "居中"]
     property var freqLabels: ["自定义时间", "5秒", "10秒", "30秒", "1分钟", "5分钟", "30分钟", "1小时", "6小时", "12小时", "1天", "2天", "1周", "1个月", "6个月", "1年", "50年", "666年"]
     property var freqSeconds: [0, 5, 10, 30, 60, 300, 1800, 3600, 21600, 43200, 86400, 172800, 604800, 2592000, 15552000, 31536000, 1576800000, 210000000]
+    property bool forceQuit: false
 
     function value(key, fallback) {
+        if (!backend)
+            return fallback
         var v = backend.value(key)
         return v === undefined || v === null || v === "" ? fallback : v
     }
@@ -43,6 +56,25 @@ ApplicationWindow {
         return idx < 0 ? 0 : idx
     }
 
+    function trayActionLabel(action) {
+        if (!backend)
+            return action
+        var idx = backend.trayActionKeys.indexOf(action)
+        return idx >= 0 ? backend.trayActionLabels[idx] : action
+    }
+
+    function canSwitchWallpaper() {
+        return backend && backend.mode === "幻灯片放映"
+    }
+
+    function parseJson(text) {
+        try {
+            return JSON.parse(text)
+        } catch (e) {
+            return ({})
+        }
+    }
+
     Connections {
         target: backend
         function onRequestShow() {
@@ -50,7 +82,13 @@ ApplicationWindow {
             root.raise()
             root.requestActivate()
         }
+        function onRequestAbout() {
+            aboutWindow.openWindow()
+        }
         function onChanged() {
+            refreshFields()
+        }
+        function onRecentFoldersChanged() {
             refreshFields()
         }
         function onModeChanged() {
@@ -198,6 +236,40 @@ ApplicationWindow {
         }
     }
 
+    component FCheckBox: CheckBox {
+        id: control
+        spacing: 7
+        implicitHeight: Math.max(24, label.implicitHeight)
+        indicator: Rectangle {
+            implicitWidth: 14
+            implicitHeight: 14
+            x: 1
+            y: (control.height - height) / 2
+            radius: 4
+            color: control.checked ? accent : panel
+            border.color: control.checked ? accent : border
+            border.width: 1
+
+            Rectangle {
+                visible: control.checked
+                width: 6
+                height: 6
+                radius: 2
+                anchors.centerIn: parent
+                color: "white"
+            }
+        }
+        contentItem: Text {
+            id: label
+            text: control.text
+            color: control.enabled ? textColor : "#98a2b3"
+            font.pixelSize: 13
+            verticalAlignment: Text.AlignVCenter
+            leftPadding: control.indicator.width + control.spacing + 2
+            wrapMode: Text.Wrap
+        }
+    }
+
     function refreshFields() {
         imagePath.text = value("single_image", "")
         videoPath.text = value("video_file", "")
@@ -213,32 +285,36 @@ ApplicationWindow {
         fitCombo.currentIndex = selectedIndex(fitModes, value("fit_mode", "填充"))
         imageFitCombo.currentIndex = fitCombo.currentIndex
         frequencyCombo.currentIndex = frequencyIndex()
+        albumCombo.currentIndex = backend.currentSlideFolderIndex
     }
 
     Rectangle {
         anchors.fill: parent
-        anchors.margins: 16
+        anchors.margins: Math.max(10, Math.min(16, root.width * 0.016))
         radius: 24
         color: panel
         border.color: borderSoft
 
         RowLayout {
             anchors.fill: parent
-            anchors.margins: 16
-            spacing: 18
+            anchors.margins: Math.max(10, Math.min(16, root.width * 0.016))
+            spacing: Math.max(10, Math.min(18, root.width * 0.018))
 
             Panel {
-                Layout.preferredWidth: 400
+                Layout.preferredWidth: Math.max(280, Math.min(430, root.width * 0.41))
+                Layout.minimumWidth: 280
+                Layout.maximumWidth: 460
                 Layout.fillHeight: true
                 ColumnLayout {
                     anchors.fill: parent
-                    anchors.margins: 12
-                    spacing: 10
+                    anchors.margins: Math.max(7, Math.min(10, root.width * 0.01))
+                    spacing: Math.max(4, Math.min(7, root.height * 0.012))
 
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 250
-                        radius: 18
+                        Layout.preferredHeight: Math.max(145, Math.min(230, root.height * 0.38))
+                        Layout.minimumHeight: 135
+                        radius: 16
                         color: surface
                         border.color: borderSoft
                         clip: true
@@ -258,10 +334,11 @@ ApplicationWindow {
                     }
 
                     RowLayout {
-                        Layout.topMargin: 10
-                        FButton { text: "上一张"; Layout.fillWidth: true; onClicked: backend.previous() }
-                        FButton { text: "下一张"; Layout.fillWidth: true; onClicked: backend.next() }
-                        FButton { text: "随机"; Layout.fillWidth: true; onClicked: backend.randomWallpaper() }
+                        Layout.topMargin: 4
+                        spacing: 6
+                        FButton { text: "上一张"; implicitHeight: 32; Layout.fillWidth: true; enabled: canSwitchWallpaper(); onClicked: backend.previous() }
+                        FButton { text: "下一张"; implicitHeight: 32; Layout.fillWidth: true; enabled: canSwitchWallpaper(); onClicked: backend.next() }
+                        FButton { text: "随机"; implicitHeight: 32; Layout.fillWidth: true; enabled: canSwitchWallpaper(); onClicked: backend.randomWallpaper() }
                     }
 
                     Label {
@@ -274,35 +351,39 @@ ApplicationWindow {
                     Label {
                         text: "实用设置"
                         color: textColor
-                        font.pixelSize: 15
+                        font.pixelSize: 14
                         font.bold: true
-                        Layout.topMargin: 12
+                        Layout.topMargin: 5
                     }
-                    CheckBox { id: autoStartToggle; text: "开机自启动"; onToggled: backend.setBool("auto_start", checked) }
-                    CheckBox { id: backgroundToggle; text: "能后台运行"; onToggled: backend.setBool("run_in_background", checked) }
+                    FCheckBox { id: autoStartToggle; text: "开机自启动"; onToggled: backend.setBool("auto_start", checked) }
+                    FCheckBox { id: backgroundToggle; text: "能后台运行"; onToggled: backend.setBool("run_in_background", checked) }
                     RowLayout {
-                        CheckBox { id: trayToggle; text: "菜单栏/托盘常驻"; Layout.fillWidth: true; onToggled: backend.setBool("tray_icon", checked) }
-                        FButton { text: "功能设置"; onClicked: trayDialog.openDialog() }
-                    }
-                    RowLayout {
-                        CheckBox { id: transitionToggle; text: "壁纸切换过渡动画"; Layout.fillWidth: true; onToggled: backend.setBool("transition_animation", checked) }
-                        FButton { text: "动画设置"; onClicked: transitionDialog.openDialog() }
+                        spacing: 6
+                        FCheckBox { id: trayToggle; text: "菜单栏/托盘常驻"; Layout.fillWidth: true; onToggled: backend.setBool("tray_icon", checked) }
+                        FButton { text: "功能设置"; implicitHeight: 28; Layout.preferredWidth: 78; onClicked: trayDialog.openDialog() }
                     }
                     RowLayout {
-                        FButton { text: "设置全局快捷键"; Layout.fillWidth: true; onClicked: hotkeyDialog.openDialog() }
-                        FButton { text: "退出"; onClicked: Qt.quit() }
+                        spacing: 6
+                        FCheckBox { id: transitionToggle; text: "壁纸切换过渡动画"; Layout.fillWidth: true; onToggled: backend.setBool("transition_animation", checked) }
+                        FButton { text: "动画设置"; implicitHeight: 28; Layout.preferredWidth: 78; onClicked: transitionDialog.openDialog() }
+                    }
+                    RowLayout {
+                        spacing: 6
+                        FButton { text: "设置全局快捷键"; implicitHeight: 32; Layout.fillWidth: true; onClicked: hotkeyDialog.openDialog() }
+                        FButton { text: "退出"; implicitHeight: 32; Layout.preferredWidth: 70; onClicked: { root.forceQuit = true; Qt.quit() } }
                     }
                     Item { Layout.fillHeight: true }
                 }
             }
 
             Panel {
-                Layout.preferredWidth: 500
+                Layout.fillWidth: true
+                Layout.minimumWidth: 360
                 Layout.fillHeight: true
                 ColumnLayout {
                     anchors.fill: parent
-                    anchors.margins: 12
-                    spacing: 10
+                    anchors.margins: Math.max(8, Math.min(12, root.width * 0.012))
+                    spacing: Math.max(6, Math.min(10, root.height * 0.018))
 
                     Label { text: "背景模式"; color: textColor; font.pixelSize: 16 }
                     FCombo {
@@ -316,6 +397,7 @@ ApplicationWindow {
                     ScrollView {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
+                        Layout.minimumHeight: 120
                         clip: true
                         ColumnLayout {
                             width: parent.width
@@ -327,7 +409,16 @@ ApplicationWindow {
                                 Label { text: "幻灯片设置"; color: textColor; font.bold: true }
                                 RowLayout {
                                     FieldLabel { text: "壁纸相册:" }
-                                    FTextField { text: backend.slideFolderLabel; readOnly: true; Layout.fillWidth: true }
+                                    FCombo {
+                                        id: albumCombo
+                                        model: backend.recentFolderLabels
+                                        Layout.fillWidth: true
+                                        onActivated: {
+                                            var paths = backend.recentFolderPaths
+                                            if (currentIndex >= 0 && currentIndex < paths.length && paths[currentIndex] !== "")
+                                                backend.setSlideFolderPath(paths[currentIndex])
+                                        }
+                                    }
                                     FButton { text: "浏览"; onClicked: folderDialog.open() }
                                     FButton { text: "打开文件夹"; onClicked: backend.openSlideFolder() }
                                 }
@@ -335,7 +426,9 @@ ApplicationWindow {
                                     Repeater {
                                         model: backend.miniPreviews
                                         Rectangle {
-                                            width: 86; height: 54; radius: 10; color: surface; border.color: borderSoft; clip: true
+                                            Layout.preferredWidth: Math.max(64, Math.min(86, root.width * 0.088))
+                                            Layout.preferredHeight: Math.max(42, Math.min(54, root.height * 0.096))
+                                            radius: 10; color: surface; border.color: borderSoft; clip: true
                                             Image { anchors.fill: parent; source: modelData; fillMode: Image.PreserveAspectCrop }
                                         }
                                     }
@@ -351,10 +444,11 @@ ApplicationWindow {
                                                 backend.setInt("slide_seconds", freqSeconds[currentIndex])
                                         }
                                     }
-                                    CheckBox { id: manualToggle; text: "手动档"; onToggled: backend.setBool("manual_mode", checked) }
+                                    FCheckBox { id: manualToggle; text: "手动档"; onToggled: backend.setBool("manual_mode", checked) }
                                 }
                                 RowLayout {
-                                    CheckBox { id: shuffleToggle; text: "随机顺序"; onToggled: backend.setBool("shuffle", checked) }
+                                    FCheckBox { id: shuffleToggle; text: "随机顺序"; onToggled: backend.setBool("shuffle", checked) }
+                                    FButton { text: "设置随机概率"; implicitHeight: 30; enabled: backend.mode === "幻灯片放映"; onClicked: randomProbabilityWindow.openWindow() }
                                 }
                                 RowLayout {
                                     FieldLabel { text: "适应模式:" }
@@ -386,7 +480,7 @@ ApplicationWindow {
                                     FTextField { id: videoPath; Layout.fillWidth: true; onEditingFinished: backend.setValue("video_file", text) }
                                     FButton { text: "浏览"; onClicked: videoDialog.open() }
                                 }
-                                CheckBox { text: "静音播放"; checked: value("video_muted", true) === true; onToggled: backend.setBool("video_muted", checked) }
+                                FCheckBox { text: "静音播放"; checked: value("video_muted", true) === true; onToggled: backend.setBool("video_muted", checked) }
                                 RowLayout {
                                     FButton { text: "播放视频壁纸"; onClicked: backend.applyCurrentMode() }
                                     FButton { text: "停止视频壁纸"; onClicked: backend.stopVideo() }
@@ -415,17 +509,20 @@ ApplicationWindow {
                                 }
                             }
 
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                Label { text: "右键菜单设置"; color: textColor; font.bold: true }
-                                CheckBox { text: "添加【Finder右键服务 → 上一张壁纸】"; checked: value("ctx_last_wallpaper", false) === true; enabled: backend.mode === "幻灯片放映"; onToggled: backend.setBool("ctx_last_wallpaper", checked) }
-                                CheckBox { text: "添加【Finder右键服务 → 下一张壁纸】"; checked: value("ctx_next_wallpaper", true) === true; enabled: backend.mode === "幻灯片放映"; onToggled: backend.setBool("ctx_next_wallpaper", checked) }
-                                CheckBox { text: "添加【Finder右键服务 → 随机壁纸】"; checked: value("ctx_random_wallpaper", false) === true; enabled: backend.mode === "幻灯片放映"; onToggled: backend.setBool("ctx_random_wallpaper", checked) }
-                                CheckBox { text: "添加【Finder右键服务 → 跳转到壁纸】"; checked: value("ctx_jump_to_wallpaper", true) === true; enabled: backend.mode === "幻灯片放映"; onToggled: backend.setBool("ctx_jump_to_wallpaper", checked) }
-                                CheckBox { text: "添加【Finder文件右键 → 设为壁纸】"; checked: value("ctx_set_wallpaper", false) === true; onToggled: backend.setBool("ctx_set_wallpaper", checked) }
-                                CheckBox { text: "添加【Finder右键服务 → 显示主界面】"; checked: value("ctx_personalize", true) === true; onToggled: backend.setBool("ctx_personalize", checked) }
-                            }
                         }
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        Layout.maximumHeight: 170
+                        spacing: 2
+                        Label { text: "右键菜单设置"; color: textColor; font.bold: true }
+                        FCheckBox { text: "添加【Finder右键服务 → 上一张壁纸】"; checked: value("ctx_last_wallpaper", false) === true; enabled: backend.mode === "幻灯片放映"; onToggled: backend.setBool("ctx_last_wallpaper", checked) }
+                        FCheckBox { text: "添加【Finder右键服务 → 下一张壁纸】"; checked: value("ctx_next_wallpaper", true) === true; enabled: backend.mode === "幻灯片放映"; onToggled: backend.setBool("ctx_next_wallpaper", checked) }
+                        FCheckBox { text: "添加【Finder右键服务 → 随机壁纸】"; checked: value("ctx_random_wallpaper", false) === true; enabled: backend.mode === "幻灯片放映"; onToggled: backend.setBool("ctx_random_wallpaper", checked) }
+                        FCheckBox { text: "添加【Finder右键服务 → 跳转到壁纸】"; checked: value("ctx_jump_to_wallpaper", true) === true; enabled: backend.mode === "幻灯片放映"; onToggled: backend.setBool("ctx_jump_to_wallpaper", checked) }
+                        FCheckBox { text: "添加【Finder文件右键 → 设为壁纸】"; checked: value("ctx_set_wallpaper", false) === true; onToggled: backend.setBool("ctx_set_wallpaper", checked) }
+                        FCheckBox { text: "添加【Finder右键服务 → 显示主界面】"; checked: value("ctx_personalize", true) === true; onToggled: backend.setBool("ctx_personalize", checked) }
                     }
 
                     PrimaryButton {
@@ -438,15 +535,91 @@ ApplicationWindow {
         }
     }
 
-    Dialog {
+    Item {
+        id: aboutButton
+        width: Math.max(42, Math.min(54, root.width * 0.052))
+        height: width
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.rightMargin: Math.max(12, Math.min(22, root.width * 0.02))
+        anchors.bottomMargin: Math.max(10, Math.min(18, root.height * 0.028))
+        property int frameIndex: aboutMouse.pressed ? 2 : (aboutMouse.containsMouse ? 1 : 0)
+        z: 20
+
+        Image {
+            anchors.fill: parent
+            source: aboutSprite
+            sourceClipRect: Qt.rect(0, aboutButton.frameIndex * 216, 216, 216)
+            fillMode: Image.PreserveAspectFit
+            smooth: true
+            mipmap: true
+        }
+
+        MouseArea {
+            id: aboutMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: aboutWindow.openWindow()
+        }
+    }
+
+    Window {
+        id: aboutWindow
+        title: "关于 上一个桌面背景"
+        width: Math.min(root.width - 80, 760)
+        height: Math.min(root.height - 80, 560)
+        minimumWidth: 420
+        minimumHeight: 320
+        visible: false
+        color: "transparent"
+        flags: Qt.Window
+
+        function openWindow() {
+            width = Math.min(root.width - 80, 760)
+            height = Math.min(root.height - 80, 560)
+            x = root.x + Math.max(20, (root.width - width) / 2)
+            y = root.y + Math.max(20, (root.height - height) / 2)
+            show()
+            raise()
+            requestActivate()
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            color: panel
+            radius: 18
+            border.color: borderSoft
+            border.width: 1
+            clip: true
+
+            Image {
+                anchors.fill: parent
+                anchors.margins: 10
+                source: aboutWindowImage
+                fillMode: Image.PreserveAspectFit
+                smooth: true
+                mipmap: true
+            }
+        }
+    }
+
+    Window {
         id: hotkeyDialog
         title: "设置快捷键"
-        modal: true
-        standardButtons: Dialog.Save | Dialog.Cancel
-        width: 620
-        height: 390
+        width: Math.min(620, root.width - 80)
+        height: Math.min(390, root.height - 80)
+        minimumWidth: 480
+        minimumHeight: 300
+        visible: false
+        color: panel
+        flags: Qt.Window
         property var fields: ({})
         function openDialog() {
+            width = Math.min(620, root.width - 80)
+            height = Math.min(390, root.height - 80)
+            x = root.x + Math.max(20, (root.width - width) / 2)
+            y = root.y + Math.max(20, (root.height - height) / 2)
             var pairs = backend.hotkeyPairs()
             for (var i = 0; i < pairs.length; i++) {
                 var p = String(pairs[i]).split("=")
@@ -457,89 +630,369 @@ ApplicationWindow {
             randomHotkey.text = fields.random || ""
             showHotkey.text = fields.show || ""
             jumpHotkey.text = fields.jump || ""
-            open()
+            show()
+            raise()
+            requestActivate()
         }
-        onAccepted: saveAdvanced()
-        GridLayout {
+        ColumnLayout {
             anchors.fill: parent
-            columns: 2
-            rowSpacing: 10
-            columnSpacing: 10
-            FieldLabel { text: "上一张:" } FTextField { id: previousHotkey; Layout.fillWidth: true; placeholderText: "u / ctrl+alt+u" }
-            FieldLabel { text: "下一张:" } FTextField { id: nextHotkey; Layout.fillWidth: true; placeholderText: "n" }
-            FieldLabel { text: "随机:" } FTextField { id: randomHotkey; Layout.fillWidth: true; placeholderText: "3" }
-            FieldLabel { text: "显示主界面:" } FTextField { id: showHotkey; Layout.fillWidth: true; placeholderText: "x" }
-            FieldLabel { text: "跳转壁纸:" } FTextField { id: jumpHotkey; Layout.fillWidth: true; placeholderText: "v" }
+            anchors.margins: 18
+            spacing: 12
+            GridLayout {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                columns: 2
+                rowSpacing: 10
+                columnSpacing: 10
+                FieldLabel { text: "上一张:" } FTextField { id: previousHotkey; Layout.fillWidth: true; placeholderText: "u / ctrl+alt+u" }
+                FieldLabel { text: "下一张:" } FTextField { id: nextHotkey; Layout.fillWidth: true; placeholderText: "n" }
+                FieldLabel { text: "随机:" } FTextField { id: randomHotkey; Layout.fillWidth: true; placeholderText: "3" }
+                FieldLabel { text: "显示主界面:" } FTextField { id: showHotkey; Layout.fillWidth: true; placeholderText: "x" }
+                FieldLabel { text: "跳转壁纸:" } FTextField { id: jumpHotkey; Layout.fillWidth: true; placeholderText: "v" }
+            }
+            RowLayout {
+                Layout.alignment: Qt.AlignRight
+                FButton { text: "取消"; Layout.preferredWidth: 90; onClicked: hotkeyDialog.close() }
+                PrimaryButton { text: "保存"; Layout.preferredWidth: 90; onClicked: { saveHotkeys(); hotkeyDialog.close() } }
+            }
         }
     }
 
-    Dialog {
+    Window {
         id: trayDialog
         title: "菜单栏/托盘功能设置"
-        modal: true
-        standardButtons: Dialog.Save | Dialog.Cancel
-        width: 620
-        height: 460
-        property var enabledItems: []
+        width: Math.min(620, root.width - 80)
+        height: Math.min(460, root.height - 80)
+        minimumWidth: 460
+        minimumHeight: 340
+        visible: false
+        color: panel
+        flags: Qt.Window
+        ListModel { id: trayModel }
         function openDialog() {
-            enabledItems = backend.trayMenuItems()
-            for (var i = 0; i < trayChecks.count; i++) {
-                var item = trayChecks.itemAt(i)
-                if (item)
-                    item.checked = enabledItems.indexOf(item.actionKey) >= 0
-            }
-            open()
+            width = Math.min(620, root.width - 80)
+            height = Math.min(460, root.height - 80)
+            x = root.x + Math.max(20, (root.width - width) / 2)
+            y = root.y + Math.max(20, (root.height - height) / 2)
+            fillTrayModel()
+            show()
+            raise()
+            requestActivate()
         }
-        onAccepted: saveAdvanced()
+        function fillTrayModel() {
+            trayModel.clear()
+            var enabledItems = backend.trayMenuItems()
+            var added = ({})
+            for (var i = 0; i < enabledItems.length; i++) {
+                var action = String(enabledItems[i])
+                if (backend.trayActionKeys.indexOf(action) >= 0 && !added[action]) {
+                    trayModel.append({ "actionKey": action, "label": trayActionLabel(action), "checked": true })
+                    added[action] = true
+                }
+            }
+            for (var j = 0; j < backend.trayActionKeys.length; j++) {
+                var rest = String(backend.trayActionKeys[j])
+                if (!added[rest])
+                    trayModel.append({ "actionKey": rest, "label": trayActionLabel(rest), "checked": false })
+            }
+        }
+        function moveItem(from, to) {
+            if (from < 0 || to < 0 || from >= trayModel.count || to >= trayModel.count || from === to)
+                return
+            trayModel.move(from, to, 1)
+        }
         ColumnLayout {
             anchors.fill: parent
-            Label { text: "勾选要显示在菜单栏/托盘中的功能项"; color: muted }
-            Repeater {
-                id: trayChecks
-                model: backend.trayActionKeys
-                CheckBox {
-                    property string actionKey: modelData
-                    text: backend.trayActionLabels[index]
+            anchors.margins: 18
+            spacing: 10
+            Label { text: "勾选要显示的功能项，可用右侧按钮调整菜单顺序"; color: muted }
+            ListView {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                clip: true
+                spacing: 6
+                model: trayModel
+                delegate: Rectangle {
+                    width: ListView.view.width
+                    height: 42
+                    radius: 12
+                    color: hovered ? surface : panel
+                    border.color: borderSoft
+                    border.width: 1
+                    property bool hovered: false
+
+                    MouseArea {
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        acceptedButtons: Qt.NoButton
+                        onEntered: parent.hovered = true
+                        onExited: parent.hovered = false
+                    }
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 10
+                        anchors.rightMargin: 8
+                        spacing: 8
+                        FCheckBox {
+                            Layout.fillWidth: true
+                            text: model.label
+                            checked: model.checked
+                            onToggled: trayModel.setProperty(index, "checked", checked)
+                        }
+                        FButton {
+                            text: "↑"
+                            implicitHeight: 28
+                            Layout.preferredWidth: 34
+                            enabled: index > 0
+                            onClicked: trayDialog.moveItem(index, index - 1)
+                        }
+                        FButton {
+                            text: "↓"
+                            implicitHeight: 28
+                            Layout.preferredWidth: 34
+                            enabled: index < trayModel.count - 1
+                            onClicked: trayDialog.moveItem(index, index + 1)
+                        }
+                    }
+                }
+            }
+            RowLayout {
+                Layout.alignment: Qt.AlignRight
+                FButton { text: "取消"; Layout.preferredWidth: 90; onClicked: trayDialog.close() }
+                PrimaryButton { text: "保存"; Layout.preferredWidth: 90; onClicked: { saveTray(); trayDialog.close() } }
+            }
+        }
+    }
+
+    Window {
+        id: transitionDialog
+        title: "过渡动画设置"
+        width: Math.min(560, root.width - 80)
+        height: Math.min(420, root.height - 80)
+        minimumWidth: 430
+        minimumHeight: 300
+        visible: false
+        color: panel
+        flags: Qt.Window
+        function openDialog() {
+            width = Math.min(560, root.width - 80)
+            height = Math.min(420, root.height - 80)
+            x = root.x + Math.max(20, (root.width - width) / 2)
+            y = root.y + Math.max(20, (root.height - height) / 2)
+            effectCombo.currentIndex = value("transition_effect", "smooth") === "frame" ? 1 : 0
+            smoothCombo.currentIndex = ["fade", "scan", "slide", "random"].indexOf(value("smooth_effect", "fade"))
+            if (smoothCombo.currentIndex < 0) smoothCombo.currentIndex = 0
+            directionCombo.currentIndex = ["left", "right", "up", "down", "random"].indexOf(value("slide_direction", "right"))
+            if (directionCombo.currentIndex < 0) directionCombo.currentIndex = 1
+            durationField.value = Math.round(Number(value("transition_duration", 1.0)) * 10)
+            framesField.value = Number(value("transition_frames", 18))
+            show()
+            raise()
+            requestActivate()
+        }
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 18
+            spacing: 10
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                RowLayout { FieldLabel { text: "转场原理:" } FCombo { id: effectCombo; model: ["丝滑转场", "帧动画"]; Layout.preferredWidth: 160 } }
+                RowLayout { visible: effectCombo.currentIndex === 0; FieldLabel { text: "转场效果:" } FCombo { id: smoothCombo; model: ["渐显混合", "放映机", "滑入", "随机转场"]; Layout.preferredWidth: 160 } }
+                RowLayout { visible: effectCombo.currentIndex === 0 && (smoothCombo.currentIndex === 1 || smoothCombo.currentIndex === 2); FieldLabel { text: "动画方向:" } FCombo { id: directionCombo; model: ["← 向左", "向右 →", "↑ 向上", "向下 ↓", "随机方向"]; Layout.preferredWidth: 160 } }
+                RowLayout { FieldLabel { text: "持续时间:" } SpinBox { id: durationField; from: 1; to: 100; editable: true; value: 10; textFromValue: function(v) { return (v / 10).toFixed(1) + " 秒" }; valueFromText: function(t) { return Math.round(parseFloat(t) * 10) } } }
+                RowLayout { visible: effectCombo.currentIndex === 1; FieldLabel { text: "帧数:" } SpinBox { id: framesField; from: 8; to: 60; editable: true; value: 18 } }
+            }
+            RowLayout {
+                Layout.alignment: Qt.AlignRight
+                FButton { text: "取消"; Layout.preferredWidth: 90; onClicked: transitionDialog.close() }
+                PrimaryButton { text: "保存"; Layout.preferredWidth: 90; onClicked: { saveTransition(); transitionDialog.close() } }
+            }
+        }
+    }
+
+    Window {
+        id: randomProbabilityWindow
+        title: "随机概率设置"
+        width: Math.min(760, root.width - 60)
+        height: Math.min(560, root.height - 60)
+        minimumWidth: 520
+        minimumHeight: 360
+        visible: false
+        color: panel
+        flags: Qt.Window
+        ListModel { id: randomProbabilityModel }
+
+        function openWindow() {
+            width = Math.min(760, root.width - 60)
+            height = Math.min(560, root.height - 60)
+            x = root.x + Math.max(20, (root.width - width) / 2)
+            y = root.y + Math.max(20, (root.height - height) / 2)
+            loadItems()
+            show()
+            raise()
+            requestActivate()
+        }
+
+        function loadItems() {
+            randomProbabilityModel.clear()
+            var items = backend.randomProbabilityItems()
+            for (var i = 0; i < items.length; i++) {
+                var item = parseJson(items[i])
+                if (item.filename !== undefined) {
+                    randomProbabilityModel.append({
+                        "filename": item.filename,
+                        "count": Number(item.count || 0),
+                        "preview": item.preview || ""
+                    })
+                }
+            }
+        }
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 18
+            spacing: 10
+
+            Label {
+                text: "数值越高，被随机到的概率越高；0 表示普通概率"
+                color: muted
+                Layout.fillWidth: true
+                wrapMode: Text.Wrap
+            }
+
+            ListView {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                clip: true
+                spacing: 8
+                model: randomProbabilityModel
+                delegate: Rectangle {
+                    width: ListView.view.width
+                    height: 74
+                    radius: 14
+                    color: hovered ? surface : panel
+                    border.color: borderSoft
+                    border.width: 1
+                    property bool hovered: false
+
+                    MouseArea {
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        acceptedButtons: Qt.NoButton
+                        onEntered: parent.hovered = true
+                        onExited: parent.hovered = false
+                    }
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 8
+                        spacing: 10
+
+                        Rectangle {
+                            Layout.preferredWidth: 88
+                            Layout.preferredHeight: 56
+                            radius: 10
+                            color: surface
+                            border.color: borderSoft
+                            clip: true
+                            Image {
+                                anchors.fill: parent
+                                source: model.preview
+                                fillMode: Image.PreserveAspectCrop
+                            }
+                        }
+
+                        Label {
+                            text: model.filename
+                            color: textColor
+                            elide: Text.ElideMiddle
+                            Layout.fillWidth: true
+                            verticalAlignment: Text.AlignVCenter
+                        }
+
+                        Label {
+                            text: "附加值"
+                            color: muted
+                            font.pixelSize: 12
+                        }
+
+                        RowLayout {
+                            Layout.preferredWidth: 106
+                            spacing: 4
+                            FButton {
+                                text: "-"
+                                implicitHeight: 24
+                                Layout.preferredWidth: 26
+                                enabled: model.count > 0
+                                onClicked: randomProbabilityModel.setProperty(index, "count", Math.max(0, model.count - 1))
+                            }
+                            Rectangle {
+                                Layout.preferredWidth: 38
+                                Layout.preferredHeight: 24
+                                radius: 8
+                                color: panel
+                                border.color: border
+                                border.width: 1
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: model.count
+                                    color: textColor
+                                    font.pixelSize: 12
+                                    font.weight: Font.Medium
+                                }
+                            }
+                            FButton {
+                                text: "+"
+                                implicitHeight: 24
+                                Layout.preferredWidth: 26
+                                enabled: model.count < 20
+                                onClicked: randomProbabilityModel.setProperty(index, "count", Math.min(20, model.count + 1))
+                            }
+                        }
+                    }
+                }
+            }
+
+            Label {
+                visible: randomProbabilityModel.count === 0
+                text: "当前相册中没有可设置的图片"
+                color: muted
+                Layout.alignment: Qt.AlignHCenter
+            }
+
+            RowLayout {
+                Layout.alignment: Qt.AlignRight
+                FButton { text: "取消"; Layout.preferredWidth: 90; onClicked: randomProbabilityWindow.close() }
+                PrimaryButton {
+                    text: "保存"
+                    Layout.preferredWidth: 90
+                    onClicked: {
+                        var pairs = []
+                        for (var i = 0; i < randomProbabilityModel.count; i++) {
+                            var item = randomProbabilityModel.get(i)
+                            pairs.push(item.filename + "=" + item.count)
+                        }
+                        backend.saveRandomProbability(pairs)
+                        randomProbabilityWindow.close()
+                    }
                 }
             }
         }
     }
 
-    Dialog {
-        id: transitionDialog
-        title: "过渡动画设置"
-        modal: true
-        standardButtons: Dialog.Save | Dialog.Cancel
-        width: 560
-        height: 420
-        function openDialog() {
-            effectCombo.currentIndex = value("transition_effect", "smooth") === "frame" ? 1 : 0
-            smoothCombo.currentIndex = ["fade", "slide", "scan", "random"].indexOf(value("smooth_effect", "fade"))
-            if (smoothCombo.currentIndex < 0) smoothCombo.currentIndex = 0
-            directionCombo.currentIndex = ["left", "right", "up", "down", "random"].indexOf(value("slide_direction", "right"))
-            if (directionCombo.currentIndex < 0) directionCombo.currentIndex = 1
-            durationField.value = Number(value("transition_duration", 1.0))
-            framesField.value = Number(value("transition_frames", 12))
-            open()
-        }
-        onAccepted: saveAdvanced()
-        ColumnLayout {
-            anchors.fill: parent
-            RowLayout { FieldLabel { text: "转场原理:" } FCombo { id: effectCombo; model: ["丝滑转场", "帧动画"]; Layout.preferredWidth: 160 } }
-            RowLayout { visible: effectCombo.currentIndex === 0; FieldLabel { text: "转场效果:" } FCombo { id: smoothCombo; model: ["渐显混合", "放映机", "滑入", "随机转场"]; Layout.preferredWidth: 160 } }
-            RowLayout { visible: effectCombo.currentIndex === 0 && (smoothCombo.currentIndex === 1 || smoothCombo.currentIndex === 2); FieldLabel { text: "动画方向:" } FCombo { id: directionCombo; model: ["← 向左", "向右 →", "↑ 向上", "向下 ↓", "随机方向"]; Layout.preferredWidth: 160 } }
-            RowLayout { FieldLabel { text: "持续时间:" } SpinBox { id: durationField; from: 1; to: 100; editable: true; value: 10; textFromValue: function(v) { return (v / 10).toFixed(1) + " 秒" }; valueFromText: function(t) { return Math.round(parseFloat(t) * 10) } } }
-            RowLayout { visible: effectCombo.currentIndex === 1; FieldLabel { text: "帧数:" } SpinBox { id: framesField; from: 4; to: 30; editable: true; value: 12 } }
-        }
-    }
-
-    function saveAdvanced() {
+    function saveTray() {
         var tray = []
-        for (var i = 0; i < trayChecks.count; i++) {
-            var item = trayChecks.itemAt(i)
-            if (item && item.checked)
+        for (var i = 0; i < trayModel.count; i++) {
+            var item = trayModel.get(i)
+            if (item.checked)
                 tray.push(item.actionKey)
         }
+        backend.saveTraySettings(tray)
+    }
+
+    function saveHotkeys() {
         var hotkeys = [
             "previous=" + previousHotkey.text,
             "next=" + nextHotkey.text,
@@ -547,10 +1000,14 @@ ApplicationWindow {
             "show=" + showHotkey.text,
             "jump=" + jumpHotkey.text
         ]
+        backend.saveHotkeySettings(hotkeys)
+    }
+
+    function saveTransition() {
         var effect = effectCombo.currentIndex === 1 ? "frame" : "smooth"
-        var smooth = ["fade", "slide", "scan", "random"][smoothCombo.currentIndex]
+        var smooth = ["fade", "scan", "slide", "random"][smoothCombo.currentIndex]
         var direction = ["left", "right", "up", "down", "random"][directionCombo.currentIndex]
-        backend.saveAdvancedSettings(tray, hotkeys, [], effect, durationField.value / 10.0, framesField.value, smooth, direction, transitionToggle.checked)
+        backend.saveTransitionSettings(effect, durationField.value / 10.0, framesField.value, smooth, direction, transitionToggle.checked)
     }
 
     Component.onCompleted: refreshFields()

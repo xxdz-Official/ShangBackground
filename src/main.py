@@ -45,6 +45,20 @@ def _ensure_pyside6():
 
 
 def main():
+    if "--macos-menu-bar-helper" in sys.argv:
+        sys.argv.remove("--macos-menu-bar-helper")
+        from macos_menu_bar import main as menu_bar_main
+
+        menu_bar_main()
+        return
+
+    if "--macos-video-wallpaper-helper" in sys.argv:
+        sys.argv.remove("--macos-video-wallpaper-helper")
+        from macos_video_wallpaper import main as video_wallpaper_main
+
+        video_wallpaper_main()
+        return
+
     if any(arg in ("-h", "--help") for arg in sys.argv[1:]):
         _print_help()
         return
