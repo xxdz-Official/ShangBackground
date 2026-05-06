@@ -32,6 +32,7 @@ ApplicationWindow {
     readonly property url appIcon: Qt.resolvedUrl("../img/LOGO.ico")
     readonly property url aboutSprite: Qt.resolvedUrl("../img/about.png")
     readonly property url aboutWindowImage: Qt.resolvedUrl("../img/about-window.png")
+    readonly property url textLogo: Qt.resolvedUrl("../img/txtlogo.png")
     property var modes: ["幻灯片放映", "图片", "视频", "纯色", "渐变"]
     property var fitModes: ["填充", "适应", "拉伸", "平铺", "居中"]
     property var freqLabels: ["自定义时间", "5秒", "10秒", "30秒", "1分钟", "5分钟", "30分钟", "1小时", "6小时", "12小时", "1天", "2天", "1周", "1个月", "6个月", "1年", "50年", "666年"]
@@ -385,13 +386,34 @@ ApplicationWindow {
                     anchors.margins: Math.max(8, Math.min(12, root.width * 0.012))
                     spacing: Math.max(6, Math.min(10, root.height * 0.018))
 
-                    Label { text: "背景模式"; color: textColor; font.pixelSize: 16 }
-                    FCombo {
-                        id: modeCombo
-                        model: modes
-                        Layout.preferredWidth: 220
-                        Component.onCompleted: currentIndex = selectedIndex(modes, backend.mode)
-                        onActivated: backend.setMode(currentText)
+                    GridLayout {
+                        Layout.fillWidth: true
+                        columns: 2
+                        columnSpacing: 12
+                        rowSpacing: 6
+                        Label {
+                            text: "背景模式"
+                            color: textColor
+                            font.pixelSize: 16
+                            Layout.fillWidth: true
+                        }
+                        Image {
+                            source: textLogo
+                            Layout.rowSpan: 2
+                            Layout.preferredWidth: 170
+                            Layout.preferredHeight: 60
+                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                            fillMode: Image.PreserveAspectFit
+                            smooth: true
+                            mipmap: true
+                        }
+                        FCombo {
+                            id: modeCombo
+                            model: modes
+                            Layout.preferredWidth: 220
+                            Component.onCompleted: currentIndex = selectedIndex(modes, backend.mode)
+                            onActivated: backend.setMode(currentText)
+                        }
                     }
 
                     ScrollView {
@@ -567,17 +589,17 @@ ApplicationWindow {
     Window {
         id: aboutWindow
         title: "关于 上一个桌面背景"
-        width: Math.min(root.width - 80, 760)
-        height: Math.min(root.height - 80, 560)
-        minimumWidth: 420
-        minimumHeight: 320
+        //width: Math.min(root.width - 80, 779)
+        height: 560
+        minimumWidth: 779
+        minimumHeight: 560
         visible: false
         color: "transparent"
         flags: Qt.Window
 
         function openWindow() {
-            width = Math.min(root.width - 80, 760)
-            height = Math.min(root.height - 80, 560)
+            //width = Math.min(root.width - 80, 779)
+            height: 560
             x = root.x + Math.max(20, (root.width - width) / 2)
             y = root.y + Math.max(20, (root.height - height) / 2)
             show()
@@ -585,22 +607,12 @@ ApplicationWindow {
             requestActivate()
         }
 
-        Rectangle {
+        Image {
             anchors.fill: parent
-            color: panel
-            radius: 18
-            border.color: borderSoft
-            border.width: 1
-            clip: true
-
-            Image {
-                anchors.fill: parent
-                anchors.margins: 10
-                source: aboutWindowImage
-                fillMode: Image.PreserveAspectFit
-                smooth: true
-                mipmap: true
-            }
+            source: aboutWindowImage
+            fillMode: Image.PreserveAspectCrop
+            smooth: true
+            mipmap: true
         }
     }
 
