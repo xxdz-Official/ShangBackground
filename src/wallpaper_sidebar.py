@@ -5,7 +5,16 @@ from tkinter import ttk
 
 from PIL import Image, ImageTk
 
-from app_config import FONT_FAMILY
+from app_config import (
+    FONT_FAMILY,
+    UI_ACCENT,
+    UI_ACCENT_SOFT,
+    UI_BG,
+    UI_BORDER_SOFT,
+    UI_MUTED,
+    UI_PANEL,
+    UI_TEXT,
+)
 
 
 SUPPORTED_EXT = ('.jpg', '.jpeg', '.png', '.bmp')
@@ -112,7 +121,7 @@ class WallpaperSidebar:
         self.master.title("壁纸侧边栏")
         self.master.overrideredirect(True)
         self.master.attributes('-topmost', True)
-        self.master.configure(bg='#f0f0f0')
+        self.master.configure(bg=UI_BG)
         screen_width = self.master.winfo_screenwidth()
         screen_height = self.master.winfo_screenheight()
         self.width = 300
@@ -121,17 +130,17 @@ class WallpaperSidebar:
         self.y = 0
         self.master.geometry(f"{self.width}x{self.height}+{screen_width}+{self.y}")
 
-        close_btn = tk.Label(self.master, text="X", font=("Segoe UI", 14),
-                             bg='#f0f0f0', fg='#666', cursor="hand2")
+        close_btn = tk.Label(self.master, text="X", font=(FONT_FAMILY, 12, "bold"),
+                             bg=UI_BG, fg=UI_MUTED, cursor="hand2")
         close_btn.place(x=self.width - 35, y=5, width=30, height=30)
         close_btn.bind("<Button-1>", lambda e: self.close_sidebar())
 
         title = tk.Label(self.master, text="壁纸列表", font=(FONT_FAMILY, 12, "bold"),
-                         bg='#f0f0f0', fg='#333')
+                         bg=UI_BG, fg=UI_TEXT)
         title.place(x=10, y=5)
 
-        self.scroll_canvas = tk.Canvas(self.master, bg='#f0f0f0', highlightthickness=0)
-        self.scroll_frame = tk.Frame(self.scroll_canvas, bg='#f0f0f0')
+        self.scroll_canvas = tk.Canvas(self.master, bg=UI_BG, highlightthickness=0)
+        self.scroll_frame = tk.Frame(self.scroll_canvas, bg=UI_BG)
         self.v_scrollbar = ttk.Scrollbar(self.master, orient="vertical", command=self.scroll_canvas.yview)
         self.scroll_canvas.configure(yscrollcommand=self.v_scrollbar.set)
 
@@ -157,16 +166,17 @@ class WallpaperSidebar:
 
     def create_placeholders(self):
         for idx, img_path in enumerate(self.image_paths):
-            frame = tk.Frame(self.scroll_frame, bg='#ffffff', relief="flat", bd=1, height=150)
-            frame.pack(pady=5, padx=10, fill="x")
+            frame = tk.Frame(self.scroll_frame, bg=UI_PANEL, relief="flat", bd=0, height=150,
+                             highlightthickness=1, highlightbackground=UI_BORDER_SOFT)
+            frame.pack(pady=6, padx=10, fill="x")
             frame.pack_propagate(False)
 
-            placeholder_label = tk.Label(frame, text="加载中...", bg='#ffffff', fg='#999',
+            placeholder_label = tk.Label(frame, text="加载中...", bg=UI_PANEL, fg=UI_MUTED,
                                          font=(FONT_FAMILY, 10))
             placeholder_label.pack(expand=True, fill="both", pady=30)
 
             name = os.path.splitext(os.path.basename(img_path))[0]
-            name_label = tk.Label(frame, text=name, bg='#ffffff', fg='#555',
+            name_label = tk.Label(frame, text=name, bg=UI_PANEL, fg=UI_MUTED,
                                   font=(FONT_FAMILY, 9), wraplength=THUMB_WIDTH)
             name_label.pack(pady=(0, 5))
 
@@ -195,7 +205,7 @@ class WallpaperSidebar:
             frame = item['frame']
             if item['placeholder_label']:
                 item['placeholder_label'].destroy()
-            img_label = tk.Label(frame, image=photo, bg='#ffffff', cursor="hand2")
+            img_label = tk.Label(frame, image=photo, bg=UI_PANEL, cursor="hand2")
             img_label.image = photo
             img_label.pack(pady=5)
             item['name_label'].pack(pady=(0, 5))
@@ -207,9 +217,9 @@ class WallpaperSidebar:
             item['img_label'] = img_label
             item['photo'] = photo
             item['placeholder_label'] = None
-            frame.configure(bg='#ffffff')
+            frame.configure(bg=UI_PANEL, highlightbackground=UI_BORDER_SOFT)
             if os.path.normpath(img_path) == os.path.normpath(self.current_path):
-                frame.config(bg="#e0f0ff", relief="solid", bd=2)
+                frame.config(bg=UI_ACCENT_SOFT, highlightbackground=UI_ACCENT, highlightthickness=2)
             self.scroll_canvas.configure(scrollregion=self.scroll_canvas.bbox("all"))
         except Exception as e:
             log_to_file(f"更新缩略图失败: {e}", self.log_path)
@@ -231,7 +241,7 @@ class WallpaperSidebar:
                 log_to_file("未找到当前壁纸", self.log_path)
                 return
             item = self.thumbnails[target_idx]
-            item['frame'].config(bg="#e0f0ff", relief="solid", bd=2)
+            item['frame'].config(bg=UI_ACCENT_SOFT, highlightbackground=UI_ACCENT, highlightthickness=2)
 
             def scroll_to_item():
                 if self._is_closing:

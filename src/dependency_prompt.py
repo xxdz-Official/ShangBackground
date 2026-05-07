@@ -6,7 +6,7 @@ import threading
 import tkinter as tk
 from tkinter import ttk
 
-from app_config import DEPENDENCIES
+from app_config import DEPENDENCIES, FONT_FAMILY, UI_BG, UI_BORDER_SOFT, UI_PANEL, UI_TEXT
 
 
 def get_missing_dependencies(availability):
@@ -34,25 +34,44 @@ def show_install_log_window(parent, packages):
     win.title("安装运行依赖")
     win.geometry("720x420")
     win.minsize(620, 360)
+    win.configure(bg=UI_BG)
     win.transient(parent)
     win.grab_set()
 
-    container = ttk.Frame(win, padding=12)
+    container = ttk.Frame(win, padding=16)
     container.pack(fill="both", expand=True)
 
     status_var = tk.StringVar(value="正在安装依赖...")
-    ttk.Label(container, textvariable=status_var).pack(anchor="w", pady=(0, 8))
+    ttk.Label(container, textvariable=status_var, style="Title.TLabel").pack(anchor="w", pady=(0, 10))
 
     text_frame = ttk.Frame(container)
     text_frame.pack(fill="both", expand=True)
 
-    log_text = tk.Text(text_frame, wrap="word", height=16, state="disabled")
+    log_text = tk.Text(
+        text_frame,
+        wrap="word",
+        height=16,
+        state="disabled",
+        bg=UI_PANEL,
+        fg=UI_TEXT,
+        insertbackground=UI_TEXT,
+        selectbackground="#d1e9ff",
+        selectforeground=UI_TEXT,
+        relief="flat",
+        borderwidth=0,
+        highlightthickness=1,
+        highlightbackground=UI_BORDER_SOFT,
+        highlightcolor=UI_BORDER_SOFT,
+        padx=12,
+        pady=10,
+        font=(FONT_FAMILY, 10),
+    )
     scrollbar = ttk.Scrollbar(text_frame, orient="vertical", command=log_text.yview)
     log_text.configure(yscrollcommand=scrollbar.set)
     log_text.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
 
-    close_btn = ttk.Button(container, text="关闭", command=win.destroy, state="disabled")
+    close_btn = ttk.Button(container, text="关闭", command=win.destroy, state="disabled", style="Accent.TButton")
     close_btn.pack(anchor="e", pady=(10, 0))
 
     def append_log(message):

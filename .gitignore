@@ -1,4 +1,10 @@
-src/__pycache__/
+__pycache__
 src/shezhi.json
 src/random.json
-src/wallpaper_debug.log
+*.log
+*.pid
+diy
+build
+dist
+*.egg-info
+*.egg
