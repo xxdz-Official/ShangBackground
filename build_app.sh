@@ -1,0 +1,26 @@
+#!/bin/bash
+set -e
+echo "=== ShangBackground 自动打包脚本 ==="
+PROJECT_DIR="/Users/zhuangweiwei/ShangBackground/ShangBackground"
+SRC_DIR="/Users/zhuangweiwei/ShangBackground/src"
+RESOURCES_DIR="$PROJECT_DIR/ShangBackground/Resources"
+echo "项目目录: $PROJECT_DIR"
+echo "源码目录: $SRC_DIR"
+mkdir -p "$RESOURCES_DIR/python"
+echo "复制 Python 文件..."
+cp -r "$SRC_DIR"/*.py "$RESOURCES_DIR/python/"
+
+echo "复制 Logo..."
+cp "$SRC_DIR/../img/LOGO.png" "$RESOURCES_DIR/"
+cp "$SRC_DIR/../img/文字logo.png" "$RESOURCES_DIR/"
+echo "复制完成"
+ls -la "$RESOURCES_DIR/python/"
+echo ""
+echo "Python 文件已复制到: $RESOURCES_DIR/python/"
+echo ""
+echo "请在 Xcode 中:"
+echo "1. 把 Resources/python 文件夹添加到项目 (拖入 Xcode)"
+echo "2. 确保 'Copy Bundle Resources' 包含了 python 文件夹"
+echo "3. 构建项目 (Cmd+B)"
+echo ""
+xcodebuild -project "$PROJECT_DIR/ShangBackground.xcodeproj" -scheme ShangBackground -configuration Debug build CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
