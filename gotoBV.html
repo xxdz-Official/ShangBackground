@@ -1,1 +1,281 @@
-即将跳转
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none';">
+    <meta name="X-Frame-Options" content="DENY">
+    <title>即将跳转 - 上一个桌面背景</title>
+    <link rel="icon" href="https://xxdz-official.github.io/ShangBackground/img/LOGO.ico" type="image/x-icon">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #f0f0f0;
+            color: #333;
+            font-family: "Consolas", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .redirect-container {
+            text-align: center;
+            padding: 40px;
+            background: #fff;
+            border: 1px solid #aaa;
+            max-width: 520px;
+            width: 90%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .redirect-container::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 4px;
+            background: linear-gradient(90deg, #34F2D9, #FB7299, #34F2D9);
+            background-size: 200% 100%;
+            animation: gradientFlow 2s linear infinite;
+        }
+
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+
+        .logo {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 20px;
+            border: 1px solid #888;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #222;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .target-url {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 24px;
+            word-break: break-all;
+            padding: 8px 12px;
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            font-family: "Consolas", monospace;
+        }
+
+        .countdown {
+            font-size: 48px;
+            font-weight: 700;
+            color: #34F2D9;
+            margin: 16px 0;
+            font-family: "Consolas", monospace;
+            line-height: 1;
+            text-shadow: 0 2px 8px rgba(52, 242, 217, 0.3);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #eee;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            position: absolute;
+            top: 0; left: 0;
+            height: 100%;
+            background: #34F2D9;
+            width: 100%;
+            transform-origin: left;
+            animation: shrink 3s linear forwards;
+        }
+
+        @keyframes shrink {
+            from { transform: scaleX(1); }
+            to { transform: scaleX(0); }
+        }
+
+        .manual-link {
+            display: inline-block;
+            margin-top: 16px;
+            color: #333;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 20px;
+            border: 1px solid #888;
+            background: #fff;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .manual-link::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: #34F2D9;
+            transition: left 0.25s ease;
+            z-index: -1;
+        }
+        .manual-link:hover::before { left: 0; }
+        .manual-link:hover { border-color: #34F2D9; color: #222; }
+
+        .cancel-btn {
+            display: inline-block;
+            margin-top: 12px;
+            margin-left: 8px;
+            color: #666;
+            font-size: 13px;
+            padding: 6px 16px;
+            border: 1px solid #ccc;
+            background: #fafafa;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .cancel-btn:hover { background: #f0f0f0; border-color: #999; }
+
+        .footer-hint {
+            margin-top: 24px;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .dots::after {
+            content: '';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+        @keyframes dots {
+            0% { content: ''; }
+            25% { content: '.'; }
+            50% { content: '..'; }
+            75% { content: '...'; }
+            100% { content: ''; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="redirect-container">
+    <img src="https://xxdz-official.github.io/ShangBackground/img/LOGO.png" alt="Logo" class="logo">
+    <h1>即将跳转<span class="dots"></span></h1>
+    <div class="target-url" id="targetUrl">正在解析目标地址...</div>
+    <div class="countdown" id="countdown">3</div>
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <a href="#" class="manual-link" id="manualLink" style="display:none;">立即跳转</a>
+    <button class="cancel-btn" id="cancelBtn" onclick="cancelRedirect()">取消跳转</button>
+    <div class="footer-hint">如果页面没有自动跳转，请检查浏览器是否禁用了JavaScript</div>
+</div>
+
+<script>
+    const ALLOWED_DOMAINS = [
+        'bilibili.com',
+        'github.com',
+        'xxdz-official.github.io',
+        'quark.cn',
+        'freeflarum.com'
+    ];
+
+    function getTargetUrl() {
+        const params = new URLSearchParams(window.location.search);
+
+        // 优先支持 BV 号跳转（符合文件名 gotoBV）
+        const bv = params.get('bv');
+        if (bv && /^BV[a-zA-Z0-9]{10}$/.test(bv)) {
+            return `https://www.bilibili.com/video/${bv}`;
+        }
+
+        // 通用 url 参数
+        const url = params.get('url') || params.get('u') || params.get('target');
+        if (url) return decodeURIComponent(url);
+
+        return null;
+    }
+
+    function isAllowedUrl(url) {
+        try {
+            const parsed = new URL(url);
+            return ALLOWED_DOMAINS.some(domain => parsed.hostname.endsWith(domain));
+        } catch {
+            return false;
+        }
+    }
+
+    let countdown = 3;
+    let timer = null;
+    const targetUrl = getTargetUrl();
+    const urlDisplay = document.getElementById('targetUrl');
+    const countdownEl = document.getElementById('countdown');
+    const manualLink = document.getElementById('manualLink');
+    const progressFill = document.getElementById('progressFill');
+
+    if (!targetUrl) {
+        urlDisplay.textContent = '错误：未提供有效的跳转目标（请使用 ?bv=BV1xxx 或 ?url=...）';
+        urlDisplay.style.color = '#d32f2f';
+        urlDisplay.style.borderColor = '#ffcdd2';
+        urlDisplay.style.background = '#ffebee';
+        countdownEl.textContent = '!';
+        progressFill.style.animation = 'none';
+        progressFill.style.background = '#d32f2f';
+        document.getElementById('cancelBtn').style.display = 'none';
+    } else if (!isAllowedUrl(targetUrl)) {
+        urlDisplay.textContent = '错误：目标地址不在安全白名单内';
+        urlDisplay.style.color = '#d32f2f';
+        urlDisplay.style.borderColor = '#ffcdd2';
+        urlDisplay.style.background = '#ffebee';
+        countdownEl.textContent = '×';
+        progressFill.style.animation = 'none';
+        progressFill.style.background = '#d32f2f';
+        document.getElementById('cancelBtn').style.display = 'none';
+        console.warn('Blocked redirect to:', targetUrl);
+    } else {
+        urlDisplay.textContent = targetUrl;
+        manualLink.href = targetUrl;
+        manualLink.style.display = 'inline-block';
+        manualLink.setAttribute('rel', 'noopener noreferrer');
+
+        timer = setInterval(() => {
+            countdown--;
+            countdownEl.textContent = countdown;
+            if (countdown <= 0) {
+                clearInterval(timer);
+                window.location.href = targetUrl;
+            }
+        }, 1000);
+    }
+
+    function cancelRedirect() {
+        if (timer) {
+            clearInterval(timer);
+            timer = null;
+        }
+        countdownEl.textContent = '已取消';
+        countdownEl.style.color = '#666';
+        progressFill.style.animationPlayState = 'paused';
+        progressFill.style.background = '#ccc';
+        document.getElementById('cancelBtn').textContent = '已取消';
+        document.getElementById('cancelBtn').disabled = true;
+        manualLink.style.display = 'none';
+    }
+</script>
+</body>
+</html>

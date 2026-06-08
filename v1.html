@@ -3,17 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; connect-src https:; frame-ancestors 'none';">
+    <meta name="X-Frame-Options" content="DENY">
     <title>上一个桌面背景 v1.0 下载</title>
     <meta name="description" content="下载上一个桌面背景 v1.0 简体中文版，一键切换壁纸历史，支持Windows 64位系统。">
     <meta name="keywords" content="上一个桌面背景下载, 壁纸工具 v1.0, ShangBackground, 桌面背景切换">
     <link rel="icon" href="https://xxdz-official.github.io/ShangBackground/img/LOGO.ico" type="image/x-icon">
     <link rel="shortcut icon" href="https://xxdz-official.github.io/ShangBackground/img/LOGO.ico" type="image/x-icon">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             background: #f0f0f0;
@@ -22,17 +20,8 @@
             line-height: 1.5;
             padding: 18px 24px;
         }
-
-        @media (max-width: 768px) {
-            body {
-                padding: 16px 18px;
-            }
-        }
-        @media (max-width: 560px) {
-            body {
-                padding: 14px 16px;
-            }
-        }
+        @media (max-width: 768px) { body { padding: 16px 18px; } }
+        @media (max-width: 560px) { body { padding: 14px 16px; } }
 
         .top-nav {
             display: flex;
@@ -55,13 +44,11 @@
             height: 44px;
             object-fit: contain;
             border: 1px solid #888;
+            transition: transform 0.3s ease;
         }
-        @media (max-width: 540px) {
-            .logo-img {
-                width: 36px;
-                height: 36px;
-            }
-        }
+        .logo-img:hover { transform: scale(1.08) rotate(-3deg); }
+        @media (max-width: 540px) { .logo-img { width: 36px; height: 36px; } }
+
         .logo-area h1 {
             font-size: 24px;
             color: #222;
@@ -69,11 +56,7 @@
             line-height: 1.2;
             word-break: break-word;
         }
-        @media (max-width: 560px) {
-            .logo-area h1 {
-                font-size: 20px;
-            }
-        }
+        @media (max-width: 560px) { .logo-area h1 { font-size: 20px; } }
 
         .back-link {
             color: #333;
@@ -82,20 +65,23 @@
             padding: 6px 14px;
             border: 1px solid #888;
             background: #fff;
-            transition: all 0.2s ease;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             white-space: nowrap;
+            position: relative;
+            overflow: hidden;
         }
-        .back-link:hover {
+        .back-link::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
             background: #34F2D9;
-            border-color: #34F2D9;
-            color: #222;
+            transition: left 0.25s ease;
+            z-index: -1;
         }
-        @media (max-width: 460px) {
-            .back-link {
-                font-size: 12px;
-                padding: 4px 10px;
-            }
-        }
+        .back-link:hover::before { left: 0; }
+        .back-link:hover { border-color: #34F2D9; color: #222; }
+        @media (max-width: 460px) { .back-link { font-size: 12px; padding: 4px 10px; } }
 
         .download-card {
             width: 100%;
@@ -103,18 +89,11 @@
             border: 1px solid #aaa;
             padding: 22px 28px;
             margin: 12px 0 24px 0;
+            transition: box-shadow 0.3s ease;
         }
-
-        @media (max-width: 700px) {
-            .download-card {
-                padding: 18px 20px;
-            }
-        }
-        @media (max-width: 550px) {
-            .download-card {
-                padding: 14px 16px;
-            }
-        }
+        .download-card:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+        @media (max-width: 700px) { .download-card { padding: 18px 20px; } }
+        @media (max-width: 550px) { .download-card { padding: 14px 16px; } }
 
         .software-header {
             display: flex;
@@ -130,23 +109,31 @@
             height: 64px;
             object-fit: contain;
             border: 1px solid #888;
+            transition: transform 0.3s ease;
         }
-        @media (max-width: 480px) {
-            .software-icon {
-                width: 52px;
-                height: 52px;
-            }
-        }
+        .software-icon:hover { transform: scale(1.05); }
+        @media (max-width: 480px) { .software-icon { width: 52px; height: 52px; } }
+
         .software-title h2 {
             font-size: 28px;
             color: #222;
             margin: 0 0 6px 0;
+            position: relative;
+            display: inline-block;
         }
-        @media (max-width: 640px) {
-            .software-title h2 {
-                font-size: 24px;
-            }
+        .software-title h2::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 40px;
+            height: 3px;
+            background: #34F2D9;
+            transition: width 0.3s ease;
         }
+        .software-title:hover h2::after { width: 100%; }
+        @media (max-width: 640px) { .software-title h2 { font-size: 24px; } }
+
         .software-title .version-tag {
             font-size: 15px;
             color: #34F2D9;
@@ -154,6 +141,11 @@
             padding: 4px 12px;
             display: inline-block;
             background: rgba(52, 242, 217, 0.05);
+            transition: all 0.2s;
+        }
+        .software-title:hover .version-tag {
+            background: rgba(52, 242, 217, 0.1);
+            transform: translateY(-1px);
         }
 
         .info-row {
@@ -165,6 +157,8 @@
         .screenshot-area {
             flex: 1.2;
             min-width: 200px;
+            position: relative;
+            overflow: hidden;
         }
         .screenshot-img {
             width: 100%;
@@ -174,6 +168,11 @@
             display: block;
             height: auto;
             background: #eaeaea;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .screenshot-area:hover .screenshot-img {
+            transform: scale(1.02);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
         }
 
         .details-area {
@@ -188,6 +187,11 @@
             border: 1px solid #ddd;
             padding: 16px 18px;
             background: #fafafa;
+            transition: box-shadow 0.3s ease, transform 0.3s ease;
+        }
+        .version-desc:hover, .platform-info:hover {
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+            transform: translateY(-1px);
         }
         .version-desc h3, .platform-info h3 {
             font-size: 20px;
@@ -209,15 +213,11 @@
             font-size: 14px;
             flex-wrap: wrap;
             margin-bottom: 8px;
+            transition: padding-left 0.2s;
         }
-        .info-label {
-            font-weight: 700;
-            min-width: 64px;
-            color: #222;
-        }
-        .info-value {
-            color: #555;
-        }
+        .info-item:hover { padding-left: 4px; }
+        .info-label { font-weight: 700; min-width: 64px; color: #222; }
+        .info-value { color: #555; }
 
         .example-project {
             margin-top: 6px;
@@ -229,17 +229,14 @@
             justify-content: space-between;
             flex-wrap: wrap;
             gap: 14px;
+            transition: all 0.3s ease;
         }
-        .example-project-left {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .example-project:hover {
+            border-color: #34F2D9;
+            box-shadow: 0 2px 12px rgba(52, 242, 217, 0.1);
         }
-        .example-project-left span {
-            font-size: 14px;
-            color: #222;
-            font-weight: 500;
-        }
+        .example-project-left { display: flex; align-items: center; gap: 10px; }
+        .example-project-left span { font-size: 14px; color: #222; font-weight: 500; }
         .example-download-btn {
             background: #fff;
             border: 1px solid #888;
@@ -249,12 +246,20 @@
             font-size: 14px;
             transition: all 0.2s;
             display: inline-block;
+            position: relative;
+            overflow: hidden;
         }
-        .example-download-btn:hover {
+        .example-download-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
             background: #34F2D9;
-            border-color: #34F2D9;
-            color: #222;
+            transition: left 0.2s ease;
+            z-index: -1;
         }
+        .example-download-btn:hover::before { left: 0; }
+        .example-download-btn:hover { border-color: #34F2D9; color: #222; }
 
         .download-links {
             margin-top: 22px;
@@ -266,7 +271,20 @@
             margin: 0 0 18px 0;
             border-left: 4px solid #34F2D9;
             padding-left: 14px;
+            position: relative;
         }
+        .download-links h3::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 14px;
+            width: 30px;
+            height: 2px;
+            background: #34F2D9;
+            transition: width 0.3s ease;
+        }
+        .download-links:hover h3::after { width: 60px; }
+
         .link-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
@@ -286,20 +304,28 @@
             font-size: 16px;
             font-weight: 500;
             text-align: center;
-            transition: all 0.2s ease;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             gap: 6px;
+            position: relative;
+            overflow: hidden;
         }
-        .download-link-btn:hover {
+        .download-link-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
             background: #34F2D9;
+            transition: left 0.25s ease;
+            z-index: -1;
+        }
+        .download-link-btn:hover::before { left: 0; }
+        .download-link-btn:hover {
             border-color: #34F2D9;
             color: #222;
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(52, 242, 217, 0.2);
         }
-        .btn-small {
-            font-size: 11px;
-            opacity: 0.85;
-            font-weight: normal;
-        }
+        .btn-small { font-size: 11px; opacity: 0.85; font-weight: normal; }
         .recommend-tag {
             background: #34F2D9;
             color: #111;
@@ -309,7 +335,10 @@
             border: none;
             font-weight: bold;
             display: inline-block;
+            transition: transform 0.2s;
         }
+        .download-link-btn:hover .recommend-tag { transform: scale(1.05); }
+
         .quark-small-note {
             grid-column: 1 / -1;
             font-size: 12px;
@@ -319,21 +348,21 @@
             padding: 10px 14px;
             border-left: 3px solid #34F2D9;
             line-height: 1.5;
+            transition: all 0.3s ease;
+        }
+        .quark-small-note:hover {
+            background: #fff8e1;
+            padding-left: 18px;
         }
 
         @media (max-width: 580px) {
-            .link-grid {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
+            .link-grid { grid-template-columns: 1fr; gap: 12px; }
             .download-link-btn {
                 padding: 10px 12px;
                 flex-direction: row;
                 justify-content: space-between;
             }
-            .btn-small, .recommend-tag {
-                margin-left: 8px;
-            }
+            .btn-small, .recommend-tag { margin-left: 8px; }
         }
 
         .footer {
@@ -349,10 +378,12 @@
             cursor: pointer;
             touch-action: manipulation;
         }
-        img {
-            max-width: 100%;
-            height: auto;
-        }
+        img { max-width: 100%; height: auto; }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f0f0f0; }
+        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 0; }
+        ::-webkit-scrollbar-thumb:hover { background: #34F2D9; }
     </style>
 </head>
 <body>
@@ -382,10 +413,10 @@
             <div class="version-desc">
                 <h3>版本简介</h3>
                 <p>
-                    上一个桌面背景 v1 是首个正式版本，核心功能：<br>
-                    • 一键回退到上一个桌面背景<br>
-                    • 壁纸历史记录管理<br>
-                    • 轻量级常驻托盘，快捷键操作<br>
+                    上一个桌面背景 v1 是首个正式版本，核心功能：
+                    • 一键回退到上一个桌面背景
+                    • 壁纸历史记录管理
+                    • 轻量级常驻托盘，快捷键操作
                     • 支持常见图片格式 (jpg/png/bmp)
                 </p>
             </div>
@@ -412,11 +443,11 @@
                 夸克网盘
                 <span class="recommend-tag">超推荐</span>
             </a>
-            <a href="暂无" class="download-link-btn" target="_blank" rel="noopener noreferrer">
+            <a href="#" class="download-link-btn" onclick="alert('123云盘备用线路暂未开通，请使用夸克网盘'); return false;">
                 123云盘
                 <span class="btn-small">备用线路</span>
             </a>
-            <a href="暂无" class="download-link-btn" target="_blank" rel="noopener noreferrer">
+            <a href="#" class="download-link-btn" onclick="alert('111云盘备用线路暂未开通，请使用夸克网盘'); return false;">
                 111云盘
                 <span class="btn-small">备用线路</span>
             </a>

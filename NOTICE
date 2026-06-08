@@ -1,0 +1,75 @@
+NOTICE / 版权声明
+
+================================================================================
+1. Code License / 代码许可
+================================================================================
+
+The source code of this project (all files except those explicitly excluded
+below) is licensed under the MIT License as described in the LICENSE file.
+
+本项目源代码（除下文明确排除的文件外）采用 MIT 许可证，详见 LICENSE 文件。
+
+================================================================================
+2. Excluded Assets / 排除资产
+================================================================================
+
+The following assets are NOT covered by the MIT License and remain the
+exclusive property of 小小电子xxdz. All rights reserved.
+
+以下资产不受 MIT 许可证覆盖，版权归 小小电子xxdz 所有，保留所有权利。
+
+Excluded directories and files / 排除的目录和文件：
+  - /img/ 目录下的所有图像文件（包括但不限于 LOGO.png、壁纸图片、图标等）
+  - /assets/ 目录下的所有视觉素材（如有）
+  - /ShangBackground/img/ 路径下的所有文件
+  - 任何以 "xxdz"、"ShangBackground" 为标识的品牌图像
+
+================================================================================
+3. Restrictions on Excluded Assets / 排除资产的使用限制
+================================================================================
+
+Without prior written permission from 小小电子xxdz, you are NOT permitted to:
+
+未经 小小电子xxdz 事先书面许可，您不得：
+
+  a) Use, copy, modify, or distribute the excluded image assets for any purpose.
+     将排除的图像资产用于任何目的，包括复制、修改或分发。
+
+  b) Use the excluded assets in commercial products, services, or advertisements.
+     将排除的资产用于商业产品、服务或广告中。
+
+  c) Incorporate the excluded assets into other software projects or repositories.
+     将排除的资产整合到其他软件项目或代码仓库中。
+
+  d) Remove, alter, or obscure any copyright notices, watermarks, or branding
+     present on the excluded assets.
+     删除、更改或遮盖排除资产上的任何版权声明、水印或品牌标识。
+
+================================================================================
+4. Contact for Licensing / 授权联系
+================================================================================
+
+To request permission to use the excluded assets, please contact:
+
+如需申请使用排除资产的授权，请联系：
+
+  Author / 作者: 小小电子xxdz
+  Platform / 平台: Bilibili (B站) — 搜索"小小电子xxdz"
+  Repository / 仓库: https://github.com/xxdz-official/ShangBackground
+
+================================================================================
+5. Disclaimer / 免责声明
+================================================================================
+
+The software is provided "as is" without warranty of any kind. The excluded
+assets are provided for reference and runtime use within this specific project
+only. Any unauthorized use of the excluded assets may constitute copyright
+infringement.
+
+本软件按"原样"提供，不提供任何担保。排除的资产仅供在本特定项目内参考和
+运行时使用。任何未经授权使用排除资产的行为可能构成版权侵权。
+
+================================================================================
+Date / 日期: 2026
+Author / 作者: 小小电子xxdz
+================================================================================

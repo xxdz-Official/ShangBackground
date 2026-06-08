@@ -2,22 +2,18 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-     <meta name="referrer" content="no-referrer">
-    <!-- 关键视口设置：确保移动端丝滑缩放，保持高分辨率清晰度 -->
+    <meta name="referrer" content="no-referrer">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; connect-src https:; frame-ancestors 'none'; base-uri 'self';">
+    <meta name="X-Frame-Options" content="DENY">
+    <meta name="X-Content-Type-Options" content="nosniff">
     <title>上一个桌面背景 - 项目主页</title>
     <meta name="description" content="轻松找回并切换您的上一个桌面背景!并解决一堆痛点！">
     <meta name="keywords" content="上一个桌面背景, 壁纸工具, 桌面背景切换, ShangBackground,小小电子xxdz">
-    <!-- 网页图标 -->
     <link rel="icon" href="https://xxdz-official.github.io/ShangBackground/img/LOGO.ico" type="image/x-icon">
     <link rel="shortcut icon" href="https://xxdz-official.github.io/ShangBackground/img/LOGO.ico" type="image/x-icon">
     <style>
-        /* 重置 & 核心 - 采用弹性布局与响应式机制，不改变高分辨率下的精致感，同时让移动端完美适配 */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             background: #f0f0f0;
@@ -25,22 +21,11 @@
             font-family: "Consolas", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             line-height: 1.5;
             padding: 20px 24px;
+            overflow-x: hidden;
         }
+        @media (max-width: 768px) { body { padding: 16px 18px; } }
+        @media (max-width: 560px) { body { padding: 14px 16px; } }
 
-        /* 响应式容器：宽屏舒服，手机内边距适中 */
-        @media (max-width: 768px) {
-            body {
-                padding: 16px 18px;
-            }
-        }
-
-        @media (max-width: 560px) {
-            body {
-                padding: 14px 16px;
-            }
-        }
-
-        /* 顶部区域 - 使用flex-wrap保证手机折叠 */
         .header-row {
             display: flex;
             align-items: center;
@@ -62,15 +47,14 @@
             height: 48px;
             object-fit: contain;
             border: 1px solid #888;
-            border-radius: 0;   /* 直角风格 */
+            border-radius: 0;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-        /* 移动端logo稍微缩小但保持清晰 */
-        @media (max-width: 540px) {
-            .logo-img {
-                width: 40px;
-                height: 40px;
-            }
+        .logo-img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(52, 242, 217, 0.3);
         }
+        @media (max-width: 540px) { .logo-img { width: 40px; height: 40px; } }
 
         .logo-area h1 {
             font-size: 28px;
@@ -79,17 +63,21 @@
             margin: 0;
             white-space: normal;
             word-break: break-word;
+            position: relative;
         }
-        @media (max-width: 680px) {
-            .logo-area h1 {
-                font-size: 22px;
-            }
+        .logo-area h1::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #34F2D9;
+            transition: width 0.3s ease;
         }
-        @media (max-width: 480px) {
-            .logo-area h1 {
-                font-size: 20px;
-            }
-        }
+        .logo-area:hover h1::after { width: 100%; }
+        @media (max-width: 680px) { .logo-area h1 { font-size: 22px; } }
+        @media (max-width: 480px) { .logo-area h1 { font-size: 20px; } }
 
         .top-bar {
             display: flex;
@@ -105,10 +93,25 @@
             padding: 5px 12px;
             border: 1px solid #888;
             background: #fff;
-            transition: background 0.2s, border-color 0.2s;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             white-space: nowrap;
+            position: relative;
+            overflow: hidden;
         }
-        /* 移动端导航链接允许换行缩小内边距 */
+        .top-bar a::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: #34F2D9;
+            transition: left 0.25s ease;
+            z-index: -1;
+        }
+        .top-bar a:hover::before { left: 0; }
+        .top-bar a:hover {
+            border-color: #34F2D9;
+            color: #222;
+        }
         @media (max-width: 650px) {
             .top-bar a {
                 font-size: 12px;
@@ -118,19 +121,24 @@
             }
         }
 
-        .top-bar a:hover {
-            background: #34F2D9;
-            border-color: #34F2D9;
-            color: #222;
-        }
-
         .divider {
             border-bottom: 2px solid #444;
             margin-bottom: 28px;
             margin-top: 6px;
+            position: relative;
         }
+        .divider::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 60px;
+            height: 2px;
+            background: #34F2D9;
+            transition: width 0.5s ease;
+        }
+        body:hover .divider::after { width: 120px; }
 
-        /* 下载横幅 - 直角灵动背景 完美响应 */
         .download-banner {
             width: 100%;
             padding: 30px 35px;
@@ -149,8 +157,20 @@
             background-size: 18% auto, 300% 300%;
             min-height: 200px;
             position: relative;
+            overflow: hidden;
         }
-        /* 移动端调整横幅背景图和布局 */
+        .download-banner::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(52,242,217,0.1) 0%, transparent 70%);
+            animation: pulse 6s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
         @media (max-width: 900px) {
             .download-banner {
                 background-size: 25% auto, 300% 300%;
@@ -159,56 +179,37 @@
                 align-items: flex-start;
                 gap: 20px;
             }
-            .banner-left-spacer {
-                display: none;
-            }
-            .banner-text {
-                margin-right: 0 !important;
-                width: 100%;
-            }
-            .banner-credit {
-                position: relative;
-                bottom: auto;
-                right: auto;
-                margin-top: 16px;
-                align-self: flex-end;
-            }
+            .banner-left-spacer { display: none; }
+            .banner-text { margin-right: 0 !important; width: 100%; }
+            .banner-credit { position: relative; bottom: auto; right: auto; margin-top: 16px; align-self: flex-end; }
         }
         @media (max-width: 600px) {
-            .download-banner {
-                background-size: 35% auto, 300% 300%;
-                padding: 20px 18px;
-            }
+            .download-banner { background-size: 35% auto, 300% 300%; padding: 20px 18px; }
         }
 
-        .download-banner:hover {
-            background-position: left center, 100% 50%;
-        }
+        .download-banner:hover { background-position: left center, 100% 50%; }
 
-        .banner-left-spacer {
-            width: 240px;
-            flex-shrink: 0;
-        }
+        .banner-left-spacer { width: 240px; flex-shrink: 0; }
 
         .banner-text {
             width: fit-content;
-            background-color: rgba(255, 255, 255, 0.75);
+            background-color: rgba(255, 255, 255, 0.85);
             padding: 12px 22px;
             border: none;
             margin-right: 280px;
-            backdrop-filter: blur(2px);
+            backdrop-filter: blur(8px);
             border-radius: 0;
+            position: relative;
+            z-index: 1;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .banner-text:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
         }
         @media (max-width: 900px) {
-            .banner-text {
-                margin-right: 0;
-                width: auto;
-                max-width: 100%;
-            }
-            .version-row {
-                flex-wrap: wrap;
-                gap: 12px;
-            }
+            .banner-text { margin-right: 0; width: auto; max-width: 100%; }
+            .version-row { flex-wrap: wrap; gap: 12px; }
         }
 
         .banner-text h2 {
@@ -216,18 +217,24 @@
             font-weight: 600;
             color: #1a1a1a;
             margin-bottom: 12px;
+            position: relative;
+            display: inline-block;
         }
+        .banner-text h2::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 40px;
+            height: 3px;
+            background: #34F2D9;
+            transition: width 0.3s ease;
+        }
+        .banner-text:hover h2::after { width: 100%; }
         @media (max-width: 560px) {
-            .banner-text h2 {
-                font-size: 24px;
-            }
-            .version-tag {
-                font-size: 22px !important;
-            }
-            .download-button, .donate-button {
-                font-size: 18px !important;
-                padding: 8px 22px !important;
-            }
+            .banner-text h2 { font-size: 24px; }
+            .version-tag { font-size: 22px !important; }
+            .download-button, .donate-button { font-size: 18px !important; padding: 8px 22px !important; }
         }
 
         .version-row {
@@ -241,6 +248,7 @@
             font-size: 26px;
             font-weight: 500;
             color: #1e1e1e;
+            position: relative;
         }
 
         .download-button {
@@ -252,14 +260,27 @@
             font-weight: 600;
             color: #2b2b2b;
             text-decoration: none;
-            transition: 0.15s;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             line-height: 1.2;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
         }
-
-        .download-button:hover {
+        .download-button::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
             background: #34F2D9;
+            transition: left 0.25s ease;
+            z-index: -1;
+        }
+        .download-button:hover::before { left: 0; }
+        .download-button:hover {
             color: #222;
             border-color: #34F2D9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 242, 217, 0.3);
         }
 
         .donate-button {
@@ -271,15 +292,27 @@
             font-weight: 600;
             color: #2b2b2b;
             text-decoration: none;
-            transition: 0.15s;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
             margin-left: 0px;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
         }
-
-        .donate-button:hover {
+        .donate-button::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
             background: #34F2D9;
+            transition: left 0.25s ease;
+            z-index: -1;
+        }
+        .donate-button:hover::before { left: 0; }
+        .donate-button:hover {
             color: #222;
-            border-color: #34F2D9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 242, 217, 0.3);
         }
 
         .banner-credit {
@@ -291,16 +324,12 @@
             font-style: italic;
             background-color: rgba(255, 255, 255, 0.4);
             padding: 2px 8px;
+            z-index: 1;
         }
         @media (max-width: 900px) {
-            .banner-credit {
-                position: static;
-                margin-top: 10px;
-                text-align: right;
-            }
+            .banner-credit { position: static; margin-top: 10px; text-align: right; }
         }
 
-        /* 悬浮窗样式 - 移动端完全适配且动画顺畅 */
         .donation-popup {
             display: none;
             position: fixed;
@@ -326,10 +355,7 @@
             opacity: 1;
         }
         @media (max-width: 700px) {
-            .donation-popup {
-                width: 95vw;
-                max-height: 85vh;
-            }
+            .donation-popup { width: 95vw; max-height: 85vh; }
         }
 
         .popup-header {
@@ -340,23 +366,23 @@
             border-bottom: 1px solid #ddd;
             background: #f8f8f8;
             flex-wrap: wrap;
+            gap: 10px;
         }
-        .popup-header h3 {
-            font-size: 1.2rem;
-            color: #222;
-        }
+        .popup-header h3 { font-size: 1.2rem; color: #222; }
         .close-popup {
             background: #fff;
             border: 1px solid #888;
             padding: 4px 12px;
             cursor: pointer;
             font-size: 18px;
-            transition: 0.2s;
+            transition: all 0.2s;
+        }
+        .close-popup:hover {
+            background: #34F2D9;
+            border-color: #34F2D9;
         }
 
-        .popup-content {
-            padding: 20px;
-        }
+        .popup-content { padding: 20px; }
         .donation-container {
             display: flex;
             gap: 24px;
@@ -371,11 +397,10 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            transition: transform 0.3s ease;
         }
-        .right-panel {
-            flex: 2;
-            min-width: 220px;
-        }
+        .left-panel:hover { transform: translateY(-2px); }
+        .right-panel { flex: 2; min-width: 220px; }
         .qr-title {
             font-size: 16px;
             font-weight: bold;
@@ -392,19 +417,13 @@
             justify-content: center;
             align-items: center;
             overflow: hidden;
+            transition: box-shadow 0.3s ease;
         }
-        .qr-image img {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
+        .qr-image:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .qr-image img { width: 100%; height: auto; display: block; }
         @media (max-width: 640px) {
-            .donation-container {
-                flex-direction: column;
-            }
-            .left-panel, .right-panel {
-                width: 100%;
-            }
+            .donation-container { flex-direction: column; }
+            .left-panel, .right-panel { width: 100%; }
         }
 
         .right-title {
@@ -412,6 +431,17 @@
             font-weight: bold;
             color: #d32f2f;
             margin-bottom: 16px;
+            position: relative;
+            padding-left: 12px;
+        }
+        .right-title::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 4px;
+            bottom: 4px;
+            width: 4px;
+            background: #d32f2f;
         }
         .form-row {
             display: flex;
@@ -420,23 +450,29 @@
             flex-wrap: wrap;
             gap: 6px;
         }
-        .form-label {
-            width: 80px;
-            font-size: 14px;
-            font-weight: 500;
-        }
+        .form-label { width: 80px; font-size: 14px; font-weight: 500; }
         .form-input, .form-textarea {
             flex: 1;
             padding: 8px 10px;
             border: 1px solid #aaa;
             font-family: inherit;
             font-size: 14px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            min-width: 0;
+        }
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #34F2D9;
+            box-shadow: 0 0 0 3px rgba(52, 242, 217, 0.15);
         }
         .tip-small {
             font-size: 12px;
             color: #666;
             margin-left: 0px;
             margin-bottom: 10px;
+            padding: 6px 10px;
+            background: #f5f5f5;
+            border-left: 3px solid #34F2D9;
         }
         .checkbox-row {
             display: flex;
@@ -452,20 +488,31 @@
             padding: 5px 12px;
             cursor: pointer;
             font-size: 13px;
+            transition: all 0.2s;
+        }
+        .friend-btn:hover {
+            background: #34F2D9;
+            border-color: #34F2D9;
         }
         .id-box {
             background: #f0f0f0;
             padding: 8px;
             text-align: center;
             margin: 15px 0;
+            font-family: "Consolas", monospace;
+            letter-spacing: 1px;
+            transition: background 0.3s;
         }
+        .id-box:hover { background: #e8e8e8; }
         .donation-tip-box {
             background: #fff8e1;
             border: 1px solid #ffd54f;
             padding: 10px;
             text-align: center;
             margin: 12px 0;
+            transition: transform 0.3s ease;
         }
+        .donation-tip-box:hover { transform: scale(1.01); }
         .submit-btn {
             width: 100%;
             background: #fff;
@@ -474,27 +521,87 @@
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            transition: 0.2s;
+            transition: all 0.25s;
+            position: relative;
+            overflow: hidden;
         }
-        .submit-btn:hover {
+        .submit-btn:hover:not(:disabled) {
             background: #34F2D9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(52, 242, 217, 0.3);
+        }
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .submit-btn.loading {
+            color: transparent;
+        }
+        .submit-btn.loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            top: 50%;
+            left: 50%;
+            margin-left: -10px;
+            margin-top: -10px;
+            border: 2px solid #34F2D9;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spinner 0.8s linear infinite;
+        }
+        @keyframes spinner {
+            to { transform: rotate(360deg); }
         }
 
-        /* 开发者模块响应式 */
+        .manual-panel {
+            display: none;
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 16px;
+            margin-top: 12px;
+        }
+        .manual-panel.show { display: block; }
+        .manual-text {
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 10px;
+            font-size: 13px;
+            font-family: "Consolas", monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin: 10px 0;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        .copy-btn {
+            background: #fff;
+            border: 1px solid #888;
+            padding: 6px 16px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .copy-btn:hover { background: #34F2D9; border-color: #34F2D9; }
+        .copy-btn.copied { background: #07C160; border-color: #07C160; color: #fff; }
+
         .developer-module {
             width: 100%;
             border: 1px solid #aaa;
             background: #fff;
             margin: 20px 0 28px 0;
+            transition: box-shadow 0.3s ease;
+        }
+        .developer-module:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
         }
         .dev-header {
             padding: 12px 20px;
             border-bottom: 1px solid #ddd;
             background: #f8f8f8;
         }
-        .dev-header h3 {
-            font-size: 22px;
-        }
+        .dev-header h3 { font-size: 22px; }
         .dev-content {
             padding: 20px;
             display: flex;
@@ -509,26 +616,33 @@
             border: 2px solid #34F2D9;
             object-fit: cover;
             flex-shrink: 0;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-        .dev-info {
-            flex: 1;
-            min-width: 180px;
+        .dev-avatar:hover {
+            transform: scale(1.05) rotate(3deg);
+            box-shadow: 0 4px 12px rgba(52, 242, 217, 0.3);
         }
+        .dev-info { flex: 1; min-width: 180px; }
         .dev-name {
             font-size: 20px;
             font-weight: 600;
             margin-bottom: 8px;
+            position: relative;
+            display: inline-block;
         }
-        .dev-bio {
-            font-size: 13px;
-            color: #555;
-            margin-bottom: 12px;
+        .dev-name::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #34F2D9;
+            transition: width 0.3s ease;
         }
-        .button-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
+        .dev-info:hover .dev-name::after { width: 100%; }
+        .dev-bio { font-size: 13px; color: #555; margin-bottom: 12px; }
+        .button-group { display: flex; flex-wrap: wrap; gap: 12px; }
         .dev-link, .video-link {
             display: inline-block;
             background: #fff;
@@ -537,26 +651,53 @@
             text-decoration: none;
             font-size: 13px;
             color: #333;
-            transition: 0.2s;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
         }
-        .dev-link:hover, .video-link:hover, .friend-btn:hover {
+        .dev-link::before, .video-link::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
             background: #34F2D9;
+            transition: left 0.2s ease;
+            z-index: -1;
+        }
+        .dev-link:hover::before, .video-link:hover::before { left: 0; }
+        .dev-link:hover, .video-link:hover {
             border-color: #34F2D9;
+            color: #222;
         }
 
-        /* 版本列表响应式 */
         .version-list {
             background: #ffffff;
             border: 1px solid #aaa;
             padding: 20px 25px;
             margin-top: 20px;
+            transition: box-shadow 0.3s ease;
+        }
+        .version-list:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
         }
         .version-list h3 {
             margin-bottom: 20px;
             font-size: 24px;
             border-left: 6px solid #34F2D9;
             padding-left: 15px;
+            position: relative;
         }
+        .version-list h3::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 15px;
+            width: 40px;
+            height: 2px;
+            background: #34F2D9;
+            transition: width 0.3s ease;
+        }
+        .version-list:hover h3::after { width: 80px; }
         .version-item {
             display: flex;
             align-items: center;
@@ -565,11 +706,13 @@
             gap: 12px;
             padding: 14px 0;
             border-bottom: 1px dashed #bbb;
+            transition: background 0.2s, padding-left 0.2s;
         }
-        .version-name {
-            font-size: 20px;
-            font-weight: 500;
+        .version-item:hover {
+            background: #fafafa;
+            padding-left: 8px;
         }
+        .version-name { font-size: 20px; font-weight: 500; }
         .version-download {
             background: #fff;
             border: 1px solid #666;
@@ -577,19 +720,27 @@
             text-decoration: none;
             font-size: 18px;
             color: #222;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
         }
-        .version-download:hover {
+        .version-download::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
             background: #34F2D9;
+            transition: left 0.2s ease;
+            z-index: -1;
+        }
+        .version-download:hover::before { left: 0; }
+        .version-download:hover {
             border-color: #34F2D9;
+            color: #222;
         }
         @media (max-width: 500px) {
-            .version-name {
-                font-size: 18px;
-            }
-            .version-download {
-                font-size: 16px;
-                padding: 4px 18px;
-            }
+            .version-name { font-size: 18px; }
+            .version-download { font-size: 16px; padding: 4px 18px; }
         }
 
         .footer {
@@ -598,51 +749,55 @@
             padding: 20px 0;
             font-size: 14px;
             text-align: left;
+            color: #666;
         }
 
-        /* 遮罩层完全适配 */
         .popup-overlay {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             background: rgba(0,0,0,0);
             z-index: 999;
             transition: background 0.25s ease;
+            backdrop-filter: blur(0px);
         }
         .popup-overlay.show {
             display: block;
             background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(2px);
         }
 
-        /* 确保触摸友好 */
         button, a, .donate-button, .submit-btn {
             cursor: pointer;
             touch-action: manipulation;
         }
+        img { max-width: 100%; height: auto; }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f0f0f0; }
+        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 0; }
+        ::-webkit-scrollbar-thumb:hover { background: #34F2D9; }
     </style>
 </head>
 <body>
 
 <div class="header-row">
     <div class="logo-area">
-        <img src="https://xxdz-official.github.io/ShangBackground/img/LOGO.png" alt="ShangBackground logo" class="logo-img">
+        <img src="https://xxdz-official.github.io/ShangBackground/img/LOGO.png" alt="ShangBackground logo" class="logo-img" loading="lazy">
         <h1>上一个桌面背景 - 项目主页</h1>
     </div>
     <div class="top-bar">
-        <a href="https://message.bilibili.com/#/whisper/mid3461569935575626" target="_blank">联系作者：小小电子xxdz</a>
-        <a href="https://miku66ccff.freeflarum.com" target="_blank">交流论坛</a>
-        <a href="https://github.com/xxdz-Official/ShangBackground" target="_blank">GitHub主页</a>
-        <a href="https://xxdz-official.github.io/x/FriendURL.html" target="_blank">友情链接</a>
-        <a href="https://xxdz-official.github.io/x" target="_blank">前往電籽的灵质空间</a>
+        <a href="https://message.bilibili.com/#/whisper/mid3461569935575626" target="_blank" rel="noopener noreferrer">联系作者：小小电子xxdz</a>
+        <a href="https://miku66ccff.freeflarum.com" target="_blank" rel="noopener noreferrer">交流论坛</a>
+        <a href="https://github.com/xxdz-Official/ShangBackground" target="_blank" rel="noopener noreferrer">GitHub主页</a>
+        <a href="https://xxdz-official.github.io/x/FriendURL.html" target="_blank" rel="noopener noreferrer">友情链接</a>
+        <a href="https://xxdz-official.github.io/x" target="_blank" rel="noopener noreferrer">前往電籽的灵质空间</a>
     </div>
 </div>
 
 <div class="divider"></div>
 
-<!-- 下载横幅 移动设备上排版优化 -->
 <div class="download-banner">
     <div class="banner-left-spacer"></div>
     <div class="banner-text">
@@ -656,7 +811,6 @@
     <h5 class="banner-credit">*本程序依靠deepseek辅助完成</h5>
 </div>
 
-<!-- 遮罩和弹窗 -->
 <div class="popup-overlay" id="popupOverlay" onclick="closeDonationPopup()"></div>
 <div class="donation-popup" id="donationPopup">
     <div class="popup-header">
@@ -675,18 +829,18 @@
                 <div class="right-title">【非必填】感谢您滴支持 ♪(^∇^*)</div>
                 <div class="form-row">
                     <span class="form-label">尊姓大名:</span>
-                    <input type="text" class="form-input" id="donorName" placeholder="">
+                    <input type="text" class="form-input" id="donorName" placeholder="请输入昵称（限20字）" maxlength="20">
                 </div>
                 <div class="tip-small">*如果想加入友情链接请填微信昵称方便核对，勿填写隐私，无需填微信号</div>
                 <div style="margin: 10px 0;">
                     <span class="form-label" style="display: block; margin-bottom: 6px;">请写备注:</span>
-                    <textarea class="form-textarea" id="donorRemark" rows="2" placeholder=""></textarea>
+                    <textarea class="form-textarea" id="donorRemark" rows="2" placeholder="请输入备注（限100字）" maxlength="100"></textarea>
                 </div>
                 <div class="checkbox-row">
                     <label class="checkbox-label">
                         <input type="checkbox" id="friendCheck" checked> 您是否想出现在官网友情链接里？
                     </label>
-                    <button class="friend-btn" onclick="window.open('https://xxdz-official.github.io/x/FriendURL.html')">查看友情链接网页</button>
+                    <button class="friend-btn" onclick="window.open('https://xxdz-official.github.io/x/FriendURL.html','_blank','noopener,noreferrer')">查看友情链接网页</button>
                 </div>
                 <div class="id-box">
                     <span class="id-text" id="randomId"></span>
@@ -696,14 +850,21 @@
                     <div class="donation-tip-text" style="margin-top: 5px;">您真是大善人q(≧▽≦q)！！感谢为小小电子xxdz的创作充电！</div>
                 </div>
                 <button class="submit-btn" id="submitBtn" onclick="submitDonation()">确认已施舍并提交信息</button>
-                <div class="footer-text">您的支持是我们前进的动力！</div>
-                <div class="footer-link">如有疑问请联系B站_小小电子xxdz(UID:3461569935575626)</div>
+
+                <div class="manual-panel" id="manualPanel">
+                    <div style="font-size:14px;font-weight:bold;color:#d32f2f;margin-bottom:8px;">📋 自动提交未配置，请手动复制以下信息：</div>
+                    <div class="manual-text" id="manualText"></div>
+                    <button class="copy-btn" id="copyBtn" onclick="copyManualText()">复制信息</button>
+                    <div style="font-size:12px;color:#666;margin-top:8px;">复制后请通过微信/B站私信发送给作者，并附上支付截图。</div>
+                </div>
+
+                <div class="footer-text" style="margin-top: 10px; font-size: 12px; color: #888; text-align: center;">您的支持是我们前进的动力！</div>
+                <div class="footer-link" style="font-size: 12px; color: #888; text-align: center;">如有疑问请联系B站_小小电子xxdz(UID:3461569935575626)</div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- 开发者模块 完美响应 -->
 <div class="developer-module">
     <div class="dev-header">
         <h3>关于作者</h3>
@@ -714,14 +875,13 @@
             <div class="dev-name">小小电子xxdz</div>
             <div class="dev-bio">我叫電籽,一只爱好电脑 术曲滴小狼‖XXDZ工作室创始人</div>
             <div class="button-group">
-                <a href="https://space.bilibili.com/3461569935575626" target="_blank" class="dev-link">访问主页 →</a>
-                <a href="https://www.bilibili.com/video/BV1juRgBbE2G" target="_blank" class="video-link">观看发布视频</a>
+                <a href="https://space.bilibili.com/3461569935575626" target="_blank" rel="noopener noreferrer" class="dev-link">访问主页 →</a>
+                <a href="https://www.bilibili.com/video/BV1juRgBbE2G" target="_blank" rel="noopener noreferrer" class="video-link">观看发布视频</a>
             </div>
         </div>
     </div>
 </div>
 
-<!-- 版本列表 -->
 <div class="version-list">
     <h3>历史版本下载列表</h3>
     <div class="version-item">
@@ -735,19 +895,54 @@
 </div>
 
 <script>
-    // 赞赏窗控制，丝滑动画支持触摸关闭
+    const CONFIG = {
+        FORMSPREE_ID: '',
+        BIN_ID: '',
+        MASTER_KEY: '',
+        MAX_NAME_LENGTH: 20,
+        MAX_REMARK_LENGTH: 100
+    };
+
+    const hasAutoSubmit = CONFIG.FORMSPREE_ID || (CONFIG.BIN_ID && CONFIG.MASTER_KEY);
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function validateInput(name, remark) {
+        const errors = [];
+        if (name.length > CONFIG.MAX_NAME_LENGTH) {
+            errors.push(`昵称过长，请限制在${CONFIG.MAX_NAME_LENGTH}字以内`);
+        }
+        if (remark.length > CONFIG.MAX_REMARK_LENGTH) {
+            errors.push(`备注过长，请限制在${CONFIG.MAX_REMARK_LENGTH}字以内`);
+        }
+        const dangerousPattern = /<script|javascript:|on\w+\s*=|data:text\/html/i;
+        if (dangerousPattern.test(name) || dangerousPattern.test(remark)) {
+            errors.push('输入包含非法字符，请移除脚本标签或事件处理器');
+        }
+        return errors;
+    }
+
     function openDonationPopup() {
         const popup = document.getElementById('donationPopup');
         const overlay = document.getElementById('popupOverlay');
         popup.style.display = 'block';
         overlay.style.display = 'block';
-        // 强制重绘后添加动画类
-        setTimeout(() => {
+        requestAnimationFrame(() => {
             popup.classList.add('show');
             overlay.classList.add('show');
-        }, 10);
+        });
         generateRandomId();
+        document.getElementById('donorName').value = '';
+        document.getElementById('donorRemark').value = '';
+        document.getElementById('friendCheck').checked = true;
+        document.getElementById('manualPanel').classList.remove('show');
     }
+
     function closeDonationPopup() {
         const popup = document.getElementById('donationPopup');
         const overlay = document.getElementById('popupOverlay');
@@ -758,55 +953,166 @@
             overlay.style.display = 'none';
         }, 300);
     }
+
     function generateRandomId() {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         let result = '';
+        const randomValues = new Uint32Array(10);
+        crypto.getRandomValues(randomValues);
         for (let i = 0; i < 10; i++) {
-            result += chars.charAt(Math.floor(Math.random() * chars.length));
+            result += chars[randomValues[i] % chars.length];
         }
         document.getElementById('randomId').textContent = `您的唯一ID: ${result}`;
         return result;
     }
-    
-    // 提交赞赏信息，保留原有接口但增加捕获错误优雅处理
+
+    function showManualFallback(data) {
+        const panel = document.getElementById('manualPanel');
+        const textEl = document.getElementById('manualText');
+        const formatted = [
+            '【打赏登记】',
+            `唯一ID: ${data.id}`,
+            `昵称: ${data.username}`,
+            `备注: ${data.data}`,
+            `友情链接: ${data.Friend === '1' ? '是' : '否'}`,
+            `时间: ${new Date(data.timestamp).toLocaleString()}`,
+            '请附上支付截图发送给作者'
+        ].join('\n');
+        textEl.textContent = formatted;
+        panel.classList.add('show');
+    }
+
+    function copyManualText() {
+        const text = document.getElementById('manualText').textContent;
+        const btn = document.getElementById('copyBtn');
+        navigator.clipboard.writeText(text).then(() => {
+            btn.textContent = '已复制 ✓';
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.textContent = '复制信息';
+                btn.classList.remove('copied');
+            }, 2000);
+        }).catch(() => {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            btn.textContent = '已复制 ✓';
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.textContent = '复制信息';
+                btn.classList.remove('copied');
+            }, 2000);
+        });
+    }
+
     async function submitDonation() {
-        const name = document.getElementById('donorName').value.trim() || '匿名';
-        const remark = document.getElementById('donorRemark').value.trim() || '无备注';
+        const nameInput = document.getElementById('donorName');
+        const remarkInput = document.getElementById('donorRemark');
+
+        const rawName = nameInput.value.trim();
+        const rawRemark = remarkInput.value.trim();
+
+        const errors = validateInput(rawName, rawRemark);
+        if (errors.length > 0) {
+            alert('输入错误：\n• ' + errors.join('\n• '));
+            return;
+        }
+
+        const name = escapeHtml(rawName) || '匿名';
+        const remark = escapeHtml(rawRemark) || '无备注';
         const friend = document.getElementById('friendCheck').checked ? '1' : '0';
         const idElement = document.getElementById('randomId');
         const id = idElement.textContent.replace('您的唯一ID: ', '');
-        const donationData = { username: name, id: id, data: remark, Friend: friend, timestamp: Date.now() };
+
+        const donationData = {
+            username: name,
+            id: id,
+            data: remark,
+            Friend: friend,
+            timestamp: Date.now()
+        };
+
         const submitBtn = document.getElementById('submitBtn');
         submitBtn.disabled = true;
+        submitBtn.classList.add('loading');
         submitBtn.textContent = '提交中...';
+
         try {
-            const BIN_ID = '698f1502d0ea881f40b76c11';
-            const MASTER_KEY = '$2a$10$usS36BdO17gWRxIMd56gjOwrDWBlfrGdsPW1AFFhcp1TBUrbqFg4G';
-            const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
-            const getResponse = await fetch(API_URL, { headers: { 'X-Master-Key': MASTER_KEY } });
-            if (!getResponse.ok) throw new Error(`获取数据失败: HTTP ${getResponse.status}`);
-            const responseData = await getResponse.json();
-            let existingData = responseData.record || (Array.isArray(responseData) ? responseData : []);
-            if (!Array.isArray(existingData)) existingData = [];
-            existingData.push(donationData);
-            const putResponse = await fetch(API_URL, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-Master-Key': MASTER_KEY },
-                body: JSON.stringify(existingData)
-            });
-            if (!putResponse.ok) throw new Error(`更新数据失败: HTTP ${putResponse.status}`);
-            alert('感谢您的施舍！\n\n数据已成功提交服务器！');
-            closeDonationPopup();
+            if (!hasAutoSubmit) {
+                await new Promise(r => setTimeout(r, 600));
+                showManualFallback(donationData);
+                submitBtn.textContent = '已生成登记信息（请手动复制）';
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('loading');
+                return;
+            }
+
+            if (CONFIG.FORMSPREE_ID) {
+                const response = await fetch(`https://formspree.io/f/${CONFIG.FORMSPREE_ID}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify(donationData)
+                });
+                if (!response.ok) throw new Error(`Formspree 提交失败: HTTP ${response.status}`);
+                alert('感谢您的施舍！\n\n数据已成功提交！');
+                closeDonationPopup();
+                return;
+            }
+
+            if (CONFIG.BIN_ID && CONFIG.MASTER_KEY) {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
+                const API_URL = `https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}`;
+
+                const getResponse = await fetch(API_URL, {
+                    headers: { 'X-Master-Key': CONFIG.MASTER_KEY },
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                if (!getResponse.ok) throw new Error(`获取数据失败: HTTP ${getResponse.status}`);
+
+                const responseData = await getResponse.json();
+                let existingData = responseData.record || (Array.isArray(responseData) ? responseData : []);
+                if (!Array.isArray(existingData)) existingData = [];
+                if (existingData.length > 1000) existingData = existingData.slice(-500);
+
+                existingData.push(donationData);
+
+                const putResponse = await fetch(API_URL, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': CONFIG.MASTER_KEY
+                    },
+                    body: JSON.stringify(existingData)
+                });
+
+                if (!putResponse.ok) throw new Error(`更新数据失败: HTTP ${putResponse.status}`);
+                alert('感谢您的施舍！\n\n数据已成功提交服务器！');
+                closeDonationPopup();
+            }
+
         } catch (error) {
             console.error('提交失败', error);
-            alert(`提交失败: ${error.message}\n\n请稍后重试或联系管理员小小电子xxdz！`);
+            if (error.name === 'AbortError') {
+                alert('提交超时，请检查网络连接后重试。');
+            } else {
+                alert(`提交失败: ${error.message}\n\n已为您切换至手动复制模式，请复制信息后联系作者。`);
+                showManualFallback(donationData);
+            }
         } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = '确认已施舍并提交信息';
+            if (!document.getElementById('manualPanel').classList.contains('show')) {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('loading');
+                submitBtn.textContent = '确认已施舍并提交信息';
+            }
         }
     }
 
-    // 点击弹窗外关闭已经由遮罩负责，ESC可选
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             const popup = document.getElementById('donationPopup');
@@ -815,9 +1121,10 @@
             }
         }
     });
-    window.onload = function() {
+
+    window.addEventListener('DOMContentLoaded', function() {
         generateRandomId();
-    };
+    });
 </script>
 </body>
 </html>
