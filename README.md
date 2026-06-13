@@ -148,8 +148,8 @@ See the [NOTICE](NOTICE) file for the full copyright statement.
 
 ## 🔗 相关链接 / Links
 
-- 🌐 作者官网 / Author Website: [xxdz-official.github.io](https://xxdz-official.github.io/)
-- 📺 Bilibili: [小小电子xxdz](https://space.bilibili.com/)
+- 🌐 作者官网 / Author Website: [電籽的灵质空间](https://xxdz-official.github.io/x)
+- 📺 Bilibili: [小小电子xxdz](https://space.bilibili.com/3461569935575626)
 - 💻 GitHub 仓库 / Repository: [xxdz-official/ShangBackground](https://github.com/xxdz-official/ShangBackground)
 - 🍴 Fork 仓库 / Fork: [purrfecto114-lgtm/ShangBackground](https://github.com/purrfecto114-lgtm/ShangBackground)
 
