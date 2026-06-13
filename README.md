@@ -127,7 +127,7 @@ pip3 install pillow requests numpy pystray psutil
 
 ## 🔗 相关链接
 
-- 作者官网：https://xxdz-official.github.io/
+- 作者官网：https://xxdz-official.github.io/x
 - B站：小小电子xxdz
 - GitHub 仓库：https://github.com/xxdz-Official/ShangBackground
 ```
