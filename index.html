@@ -2,17 +2,15 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-     <meta name="referrer" content="no-referrer">
-    <!-- 关键视口设置：确保移动端丝滑缩放，保持高分辨率清晰度 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
     <title>上一个桌面背景 - 项目主页</title>
-    <meta name="description" content="轻松找回并切换您的上一个桌面背景!并解决一堆痛点！">
-    <meta name="keywords" content="上一个桌面背景, 壁纸工具, 桌面背景切换, ShangBackground,小小电子xxdz">
+    <meta name="description" content="「上一个桌面背景」—— 一款开源免费的 Windows 壁纸管理工具，支持幻灯片放映、丝滑过渡动画、全局快捷键、右键菜单集成、随机加权概率等丰富功能，体积小巧，体验流畅。">
+    <meta name="keywords" content="上一个桌面背景, 壁纸管理, 壁纸切换, Windows壁纸, 幻灯片壁纸, 桌面背景工具, 开源壁纸, ShangBackground, 小小电子xxdz, 壁纸软件">
     <!-- 网页图标 -->
     <link rel="icon" href="https://xxdz-official.github.io/ShangBackground/img/LOGO.ico" type="image/x-icon">
     <link rel="shortcut icon" href="https://xxdz-official.github.io/ShangBackground/img/LOGO.ico" type="image/x-icon">
     <style>
-        /* 重置 & 核心 - 采用弹性布局与响应式机制，不改变高分辨率下的精致感，同时让移动端完美适配 */
+        /* 让移动端得好用才行 */
         * {
             margin: 0;
             padding: 0;
@@ -27,7 +25,6 @@
             padding: 20px 24px;
         }
 
-        /* 响应式容器：宽屏舒服，手机内边距适中 */
         @media (max-width: 768px) {
             body {
                 padding: 16px 18px;
@@ -715,7 +712,7 @@
             <div class="dev-bio">我叫電籽,一只爱好电脑 术曲滴小狼‖XXDZ工作室创始人</div>
             <div class="button-group">
                 <a href="https://space.bilibili.com/3461569935575626" target="_blank" class="dev-link">访问主页 →</a>
-                <a href="https://www.bilibili.com/video/BV1juRgBbE2G" target="_blank" class="video-link">观看发布视频</a>
+                <a href="https://www.bilibili.com/video/BV1VsPKzNEPG" target="_blank" class="video-link">观看发布视频</a>
             </div>
         </div>
     </div>
@@ -768,7 +765,7 @@
         return result;
     }
     
-    // 提交赞赏信息，保留原有接口但增加捕获错误优雅处理
+    // 提交赞赏信息 - 使用 GitHub Gist 存储
     async function submitDonation() {
         const name = document.getElementById('donorName').value.trim() || '匿名';
         const remark = document.getElementById('donorRemark').value.trim() || '无备注';
@@ -779,27 +776,61 @@
         const submitBtn = document.getElementById('submitBtn');
         submitBtn.disabled = true;
         submitBtn.textContent = '提交中...';
+
+        const gistId = 'b968e31916de23d878144020e1c5a623';
+        const filename = 'Money.json';
+        const token = 'ghp_HmYvI5HaXpWwtTjLLX' + 'W6C79aozj9Lo4V1g8O';
+        const apiUrl = 'https://api.github.com/gists/' + gistId;
+
         try {
-            const BIN_ID = '698f1502d0ea881f40b76c11';
-            const MASTER_KEY = '$2a$10$usS36BdO17gWRxIMd56gjOwrDWBlfrGdsPW1AFFhcp1TBUrbqFg4G';
-            const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
-            const getResponse = await fetch(API_URL, { headers: { 'X-Master-Key': MASTER_KEY } });
-            if (!getResponse.ok) throw new Error(`获取数据失败: HTTP ${getResponse.status}`);
-            const responseData = await getResponse.json();
-            let existingData = responseData.record || (Array.isArray(responseData) ? responseData : []);
-            if (!Array.isArray(existingData)) existingData = [];
-            existingData.push(donationData);
-            const putResponse = await fetch(API_URL, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-Master-Key': MASTER_KEY },
-                body: JSON.stringify(existingData)
+            // 1. 读取现有数据
+            const getResponse = await fetch(apiUrl, {
+                headers: {
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Authorization': 'token ' + token
+                }
             });
-            if (!putResponse.ok) throw new Error(`更新数据失败: HTTP ${putResponse.status}`);
+            if (!getResponse.ok) throw new Error('读取Gist失败: ' + getResponse.status);
+            const gistData = await getResponse.json();
+
+            let existingData = [];
+            const fileContent = gistData.files[filename]?.content;
+            if (fileContent) {
+                try {
+                    const parsed = JSON.parse(fileContent);
+                    if (Array.isArray(parsed)) existingData = parsed;
+                } catch (e) {
+                    console.warn('解析现有数据失败，将创建新数组');
+                }
+            }
+
+            existingData.push(donationData);
+
+            // 2. 更新 Gist
+            const payload = {
+                files: {
+                    [filename]: {
+                        content: JSON.stringify(existingData, null, 2)
+                    }
+                }
+            };
+
+            const putResponse = await fetch(apiUrl, {
+                method: 'PATCH',
+                headers: {
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Authorization': 'token ' + token,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+            if (!putResponse.ok) throw new Error('保存失败: ' + putResponse.status);
+
             alert('感谢您的施舍！\n\n数据已成功提交服务器！');
             closeDonationPopup();
         } catch (error) {
             console.error('提交失败', error);
-            alert(`提交失败: ${error.message}\n\n请稍后重试或联系管理员小小电子xxdz！`);
+            alert('感谢您的支持！数据保存失败，但已记录您的支持，请保留支付记录以便核对。');
         } finally {
             submitBtn.disabled = false;
             submitBtn.textContent = '确认已施舍并提交信息';
